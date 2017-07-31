@@ -13,6 +13,7 @@
 /**
  * Use absolute or relative path??!
  **/
+/*
 var config = {
     backgroundTextureAddress : "./img/page-background-tile.png",
     
@@ -23,6 +24,7 @@ var config = {
     paintBackgroundTexture : true,
     useAdditionalBoxNodes  : true // false;
 };
+*/
 //--- END -------------------------- Constants ---------------------------------
 
 window.Delaunay = function( pointList, config ) {
@@ -51,14 +53,14 @@ window.Delaunay = function( pointList, config ) {
 	    this.y = y;
 	    
 	} // END Vertex
+    
 	//------------------------------------------------------------
 	// Triangle class
 	//------------------------------------------------------------
-
-	function Triangle( v0, v1, v2 )	{
-	    this.v0 = v0;
-	    this.v1 = v1;
-	    this.v2 = v2;
+        function Triangle( a, b, c )	{
+	    this.a = a;
+	    this.b = b;
+	    this.c = c;
 
 	    this.CalcCircumcircle();
 	    
@@ -84,15 +86,15 @@ window.Delaunay = function( pointList, config ) {
 	Triangle.prototype.CalcCircumcircle = function() 	{
 	    // From: http://www.exaflop.org/docs/cgafaq/cga1.html
 
-	    var A = this.v1.x - this.v0.x; 
-	    var B = this.v1.y - this.v0.y; 
-	    var C = this.v2.x - this.v0.x; 
-	    var D = this.v2.y - this.v0.y; 
+	    var A = this.b.x - this.a.x; 
+	    var B = this.b.y - this.a.y; 
+	    var C = this.c.x - this.a.x; 
+	    var D = this.c.y - this.a.y; 
 
-	    var E = A*(this.v0.x + this.v1.x) + B*(this.v0.y + this.v1.y); 
-	    var F = C*(this.v0.x + this.v2.x) + D*(this.v0.y + this.v2.y); 
+	    var E = A*(this.a.x + this.b.x) + B*(this.a.y + this.b.y); 
+	    var F = C*(this.a.x + this.c.x) + D*(this.a.y + this.c.y); 
 
-	    var G = 2.0*(A*(this.v2.y - this.v1.y)-B*(this.v2.x - this.v1.x)); 
+	    var G = 2.0*(A*(this.c.y - this.b.y)-B*(this.c.x - this.b.x)); 
 	    
 	    var dx, dy;
 	    
@@ -102,10 +104,10 @@ window.Delaunay = function( pointList, config ) {
 		function max3( a, b, c ) { return ( a >= b && a >= c ) ? a : ( b >= a && b >= c ) ? b : c; }
 		function min3( a, b, c ) { return ( a <= b && a <= c ) ? a : ( b <= a && b <= c ) ? b : c; }
 
-		var minx = min3( this.v0.x, this.v1.x, this.v2.x );
-		var miny = min3( this.v0.y, this.v1.y, this.v2.y );
-		var maxx = max3( this.v0.x, this.v1.x, this.v2.x );
-		var maxy = max3( this.v0.y, this.v1.y, this.v2.y );
+		var minx = min3( this.a.x, this.b.x, this.c.x );
+		var miny = min3( this.a.y, this.b.y, this.c.y );
+		var maxx = max3( this.a.x, this.b.x, this.c.x );
+		var maxy = max3( this.a.y, this.b.y, this.c.y );
 
 		this.center = new Vertex( ( minx + maxx ) / 2, ( miny + maxy ) / 2 );
 
@@ -117,8 +119,8 @@ window.Delaunay = function( pointList, config ) {
 
 		this.center = new Vertex( cx, cy );
 
-		dx = this.center.x - this.v0.x;
-		dy = this.center.y - this.v0.y;
+		dx = this.center.x - this.a.x;
+		dy = this.center.y - this.a.y;
 	    }
 
 	    this.radius_squared = dx * dx + dy * dy;
@@ -139,9 +141,9 @@ window.Delaunay = function( pointList, config ) {
 	//------------------------------------------------------------
 	// Edge class
 	//------------------------------------------------------------
-	function Edge( v0, v1 )	{
-	    this.v0 = v0;
-	    this.v1 = v1;
+	function Edge( a, b )	{
+	    this.a = a;
+	    this.b = b;
 	    
 	} // Edge
 
@@ -182,10 +184,9 @@ window.Delaunay = function( pointList, config ) {
 	    for( i in triangles ) {
 		var triangle = triangles[i];
 
-		if( triangle.v0 == st.v0 || triangle.v0 == st.v1 || triangle.v0 == st.v2 ||
-		    triangle.v1 == st.v0 || triangle.v1 == st.v1 || triangle.v1 == st.v2 ||
-		    triangle.v2 == st.v0 || triangle.v2 == st.v1 || triangle.v2 == st.v2 )
-		{
+		if( triangle.a == st.a || triangle.a == st.b || triangle.a == st.c ||
+		    triangle.b == st.a || triangle.b == st.b || triangle.b == st.c ||
+		    triangle.c == st.a || triangle.c == st.b || triangle.c == st.c ) {
 		    delete triangles[i];
 		}
 	    }
@@ -234,9 +235,9 @@ window.Delaunay = function( pointList, config ) {
 		var triangle = triangles[i];
 
 		if( triangle.InCircumcircle( vertex ) ) {
-		    edges.push( new Edge( triangle.v0, triangle.v1 ) );
-		    edges.push( new Edge( triangle.v1, triangle.v2 ) );
-		    edges.push( new Edge( triangle.v2, triangle.v0 ) );
+		    edges.push( new Edge( triangle.a, triangle.b ) );
+		    edges.push( new Edge( triangle.b, triangle.c ) );
+		    edges.push( new Edge( triangle.c, triangle.a ) );
 
 		    delete triangles[i];
 		}
@@ -248,7 +249,7 @@ window.Delaunay = function( pointList, config ) {
 	    for( i in edges ) {
 		// console.log( 'adding triangle' );
 		var edge = edges[i];
-		triangles.push( new Triangle( edge.v0, edge.v1, vertex ) );
+		triangles.push( new Triangle( edge.a, edge.b, vertex ) );
 	    }	
 	} // AddVertex
 
@@ -265,8 +266,8 @@ window.Delaunay = function( pointList, config ) {
 		    if( i != j ) {
 			var edge2 = edges[j];
 
-			if( ( edge1.v0 == edge2.v0 && edge1.v1 == edge2.v1 ) ||
-			    ( edge1.v0 == edge2.v1 && edge1.v1 == edge2.v0 ) ) {
+			if( ( edge1.a == edge2.a && edge1.b == edge2.b ) ||
+			    ( edge1.a == edge2.b && edge1.b == edge2.a ) ) {
 			    unique = false;
 			    break;
 			}

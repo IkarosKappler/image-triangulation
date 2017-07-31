@@ -7,67 +7,10 @@
  **/
 
 
-Dropzone.autoDiscover = false;
-/* Dropzone.options.dzone = {
-    //acceptedFiles: "image/jpeg,image/png,image/gif"
-    //acceptedFiles: ".mp4,.mkv,.avi"
-}*/
-
-
 (function($) {
-
-    /*
-    try {
-	var formData = new FormData();
-	dropZone = new Dropzone('#upload-widget', {
-	    url                : '/demo/portfolio/upload-video', // '/test/histogram/upload-file.ajax.php', // _UPLOAD_URL, // This is configured in line 29
-	    method             : 'post',
-	    // withCredentials    : true,     // DO NOT SET FOR CORS!
-	    paramName          : 'file',
-	    maxFilesize        : 12, // MB
-	    addRemoveLinks     : true,
-	    maxFiles           : 1,
-	    thumbnailWidth     : 128,
-	    thumbnailHeight    : 128,
-	    dictDefaultMessage : 'Drag an image here to upload, or click to select one.',
-	    headers: {
-		// These headers MUST be allowed by the CORS configuration of the server if you want to use them.
-		'x-csrf-token'                 : 'abcdef0123456789',
-		'Access-Control-Allow-Headers' : 'Authorization, Content-Type, Accept, X-Mashape-Authorization',
-		'Authorization'                : null, // Clear authorizationHeader
-		'Cache-Control'                : null,
-		'X-Requested-With'             : null
-	    },
-	    acceptedFiles: ".mp4,.mkv,.avi",
-	    acceptedFiles: "video/*",
-	    init: function() {
-		this.on("addedfile", function(file) {
-		    //$uploadPreview.css( 'display', 'inherit' );
-		});
-		this.on('success', function( file, response ) {
-		    var json = jQuery.parseJSON(response);
-		});
-		this.on('error', function(file, response) {
-		    console.error( "Failed to upload file!" );
-		    console.error( "Error response: " + response );
-		    setErrorStatus( 'Failed to upload file: ' + response );
-		} );
-		this.on('sending',function(file,xhr,data) {
-		    // NOOP
-		});
-	    }
-	}  );
-    } catch( e ) {
-	console.warn( "Failed to initialize the drop zone: " + e );
-    }
-    */
     
-
-    //var MAX_DIST  = 200;
-    var MIN_SPEED = 10;
     var DEFAULT_CANVAS_WIDTH = 1024;
     var DEFAULT_CANVAS_HEIGHT = 768;
-    var POINT_COLORS = [ Color.makeRGB(255,0,0), Color.makeRGB(0,255,0), Color.makeRGB(0,0,255) ];
     
     $( document ).ready( function() {
 
@@ -149,12 +92,12 @@ Dropzone.autoDiscover = false;
 	// | Generates a random color object with r=g=b.
 	// +-------------------------------
 	var randomGreyscale = function() {
-	    var v = randomInt(255);
+	    var v = randomInt(256);
 	    return Color.makeRGB( v, v, v );
 	};
 
 	// +---------------------------------------------------------------------------------
-	// | Draw the given line (between the two points) with the specified color.
+	// | Draw the given line (between the two points) with the specified (CSS-) color.
 	// +-------------------------------
 	var drawLine = function( zA, zB, color ) {
 	    //console.log( 'draw complex point at ' + z ); 
@@ -168,10 +111,9 @@ Dropzone.autoDiscover = false;
 	}
 
 	// +---------------------------------------------------------------------------------
-	// | Draw the given point with the specified color.
+	// | Draw the given point with the specified (CSS-) color.
 	// +-------------------------------
 	var drawPoint = function( p, color ) {
-	    //console.log( 'draw complex point at ' + z ); 
 	    var radius = 3;
 	    ctx.beginPath();
 	    ctx.arc( p.x, p.y, radius, 0, 2 * Math.PI, false );
@@ -179,11 +121,14 @@ Dropzone.autoDiscover = false;
 	    ctx.fill();
 	};
 
+	// +---------------------------------------------------------------------------------
+	// | Draw the given triangle with the specified (CSS-) color.
+	// +-------------------------------
 	var drawTriangle = function( t, color ) {
 	    ctx.beginPath();
-	    ctx.moveTo( t.v0.x, t.v0.y );
-	    ctx.lineTo( t.v1.x, t.v1.y );
-	    ctx.lineTo( t.v2.x, t.v2.y );
+	    ctx.moveTo( t.a.x, t.a.y );
+	    ctx.lineTo( t.b.x, t.b.y );
+	    ctx.lineTo( t.c.x, t.c.y );
 	    ctx.fillStyle = color;
 	    ctx.strokeStyle = color;
 	    ctx.fill();
