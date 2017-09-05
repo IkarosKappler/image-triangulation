@@ -4,6 +4,11 @@ A simple image and point set triangulation using Delaunay
 Written in Javascript (with HTML5 Canvas), inspired by the delaunay triangulation algorithm found at
 http://www.travellermap.com/tmp/delaunay.htm
 
+Feature list
+ * Random point set.
+ * Triangulate point set.
+ * Use triangulation colors from image.
+ * Export SVG images.
 
 
 ![A simple triangulation with 25 points](triangulation-a.png)
