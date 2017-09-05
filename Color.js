@@ -156,7 +156,7 @@ Color.Sanitizer = {
                 if(c < 0) throw new Error("Bad format");
                 else if(c >= 0 && c < 1) o[i] = c;
                 else if(c >= 1 && c < 256) o[i] = c/255;
-                else throw new Error("Bad format");
+                else throw new Error("Bad format ("+c+")");
             }
         }
         return o;

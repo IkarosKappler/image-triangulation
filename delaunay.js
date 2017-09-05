@@ -8,25 +8,6 @@
  * @version   2.0.0
  **/
 
-
-//--- BEGIN ------------------------ Constants ---------------------------------
-/**
- * Use absolute or relative path??!
- **/
-/*
-var config = {
-    backgroundTextureAddress : "./img/page-background-tile.png",
-    
-    paintEdges             : false,
-    fillTriangles          : true,
-    paintPoints            : false,
-    paintTriangles         : true,
-    paintBackgroundTexture : true,
-    useAdditionalBoxNodes  : true // false;
-};
-*/
-//--- END -------------------------- Constants ---------------------------------
-
 window.Delaunay = function( pointList, config ) {
 
 	var backgroundTexture;
@@ -99,20 +80,12 @@ window.Delaunay = function( pointList, config ) {
 	    var dx, dy;
 	    
 	    if( Math.abs(G) < EPSILON ) {
-		// Collinear - find extremes and use the midpoint
+		// Collinear - find extremes and use the midpoint		
+		var bounds = this.bounds();
+		this.center = new Vertex( ( bounds.xMin + bounds.xMax ) / 2, ( bounds.yMin + bounds.yMax ) / 2 );
 
-		function max3( a, b, c ) { return ( a >= b && a >= c ) ? a : ( b >= a && b >= c ) ? b : c; }
-		function min3( a, b, c ) { return ( a <= b && a <= c ) ? a : ( b <= a && b <= c ) ? b : c; }
-
-		var minx = min3( this.a.x, this.b.x, this.c.x );
-		var miny = min3( this.a.y, this.b.y, this.c.y );
-		var maxx = max3( this.a.x, this.b.x, this.c.x );
-		var maxy = max3( this.a.y, this.b.y, this.c.y );
-
-		this.center = new Vertex( ( minx + maxx ) / 2, ( miny + maxy ) / 2 );
-
-		dx = this.center.x - minx;
-		dy = this.center.y - miny;
+		dx = this.center.x - bounds.xMin;
+		dy = this.center.y - bounds.yMin;
 	    } else {
 		var cx = (D*E - B*F) / G; 
 		var cy = (A*F - C*E) / G;
@@ -127,8 +100,7 @@ window.Delaunay = function( pointList, config ) {
 	    this.radius = Math.sqrt( this.radius_squared );
 	}; // CalcCircumcircle
 
-	Triangle.prototype.InCircumcircle = function( v )
-	{
+        Triangle.prototype.InCircumcircle = function( v ) {
 	    var dx = this.center.x - v.x;
 	    var dy = this.center.y - v.y;
 	    var dist_squared = dx * dx + dy * dy;
@@ -138,6 +110,34 @@ window.Delaunay = function( pointList, config ) {
 	}; // InCircumcircle
 
 
+        Triangle.prototype.bounds = function() {
+	    function max3( a, b, c ) { return ( a >= b && a >= c ) ? a : ( b >= a && b >= c ) ? b : c; }
+	    function min3( a, b, c ) { return ( a <= b && a <= c ) ? a : ( b <= a && b <= c ) ? b : c; }
+	    var minx = min3( this.a.x, this.b.x, this.c.x );
+	    var miny = min3( this.a.y, this.b.y, this.c.y );
+	    var maxx = max3( this.a.x, this.b.x, this.c.x );
+	    var maxy = max3( this.a.y, this.b.y, this.c.y );
+	    return { xMin : minx, yMin : miny, xMax : maxx, yMax : maxy, width : maxx-minx, height : maxy-miny };
+	};
+
+        Triangle.prototype.containsPoint = function( p ) {
+	    /**
+	     * Point-in-Triangle test found at
+	     *   http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
+	     **/
+	    function pointIsInTriangle( px, py, p0x, p0y, p1x, p1y, p2x, p2y ) {
+		
+		var area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y);
+
+		var s = 1/(2*area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py);
+		var t = 1/(2*area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py);
+
+		return s > 0 && t > 0 && (1-s-t) > 0;
+	    };
+
+	    return pointIsInTriangle( p.x, p.y, this.a.x, this.a.y, this.b.x, this.b.y, this.c.x, this.c.y );
+        }
+    
 	//------------------------------------------------------------
 	// Edge class
 	//------------------------------------------------------------
@@ -163,7 +163,7 @@ window.Delaunay = function( pointList, config ) {
 	    //
 	    // First, create a "supertriangle" that bounds all vertices
 	    //
-	    var st = CreateBoundingTriangle( vertices );
+	    var st = createBoundingTriangle( vertices );
 	    
 	    triangles.push( st );
 
@@ -197,7 +197,7 @@ window.Delaunay = function( pointList, config ) {
 
 
 	// Internal: create a triangle that bounds the given vertices, with room to spare
-	function CreateBoundingTriangle( vertices ) {
+	function createBoundingTriangle( vertices ) {
 	    // NOTE: There's a bit of a heuristic here. If the bounding triangle 
 	    // is too large and you see overflow/underflow errors. If it is too small 
 	    // you end up with a non-convex hull.
@@ -221,7 +221,7 @@ window.Delaunay = function( pointList, config ) {
 
 	    return new Triangle( stv0, stv1, stv2 );
 	    
-	} // CreateBoundingTriangle
+	} // createBoundingTriangle
 
 
 	// Internal: update triangulation with a vertex 
@@ -243,7 +243,7 @@ window.Delaunay = function( pointList, config ) {
 		}
 	    }
 
-	    edges = UniqueEdges( edges );
+	    edges = mkUniqueEdges( edges );
 
 	    // Create new triangles from the unique edges and new vertex
 	    for( i in edges ) {
@@ -255,7 +255,7 @@ window.Delaunay = function( pointList, config ) {
 
 
 	// Internal: remove duplicate edges from an array
-	function UniqueEdges( edges ) {
+	function mkUniqueEdges( edges ) {
 	    // TODO: This is O(n^2), make it O(n) with a hash or some such
 	    var uniqueEdges = [];
 	    for( var i in edges ) {
@@ -281,7 +281,7 @@ window.Delaunay = function( pointList, config ) {
 
 	    return uniqueEdges;
 	    
-	} // UniqueEdges
+	} // END mkUniqueEdges
 
     // Do some pseudo exports
     this.triangulate = performPolygonTriangulation;

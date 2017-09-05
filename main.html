@@ -11,23 +11,21 @@
 
     
     <script src="jquery-3.2.0.min.js"></script>
-    <script src="dropzone.js"></script>
     <script src="dat.gui.min.js"></script>
+    <script src="dat.gui.title.polyfill.js"></script>
+    <script src="lib/FileSaver.js"></script>
     <script src="Color.js"></script>
     <script src="delaunay.js"></script>
     <script src="main.js"></script>
-    <link rel="stylesheet" type="text/css" media="screen" href="style.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="dropzone.css" /> 
+    <link rel="stylesheet" type="text/css" media="screen" href="style.css" /> 
   </head>
   <body>
     <!-- <div id="upload-widget" class="dropzone"> -->
-    <input type="file" name="image" id="image" /><br/>
-    <input type="checkbox" id="draw-points" name="draw-points" checked="checked" /><label for="draw-points">Draw Points</label><br/>
-    <button type="button" id="random-points">Random Points</button>
-    <button type="button" id="triangulate">Triangulate</button>
+    <input type="file" name="image" id="image" style="display: none;"/>
     </div>
     <div id="canvas-wrapper">
       <canvas id="my-canvas" width="1024" height="768" />
     </div>
+    <div id="svg-preview"></div>
   </body>
 </html>

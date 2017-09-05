@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" standalone="yes"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="981" height="159" version="1.1" 
+   xmlns="http://www.w3.org/2000/svg">
+   <polygon points="239,121 275,94 241,72" style="fill:rgb(222,222,222);stroke:purple;stroke-width:1" />
+   <polygon points="275,94 239,121 310,143" style="fill:rgb(113,113,113);stroke:purple;stroke-width:1" />
+   <polygon points="239,121 178,149 310,143" style="fill:rgb(72,72,72);stroke:purple;stroke-width:1" />
+   <polygon points="584,142 574,24 513,130" style="fill:rgb(219,219,219);stroke:purple;stroke-width:1" />
+   <polygon points="464,88 513,130 518,8" style="fill:rgb(115,115,115);stroke:purple;stroke-width:1" />
+   <polygon points="513,130 574,24 518,8" style="fill:rgb(119,119,119);stroke:purple;stroke-width:1" />
+   <polygon points="905,89 910,49 817,19" style="fill:rgb(83,83,83);stroke:purple;stroke-width:1" />
+   <polygon points="695,29 768,67 817,19" style="fill:rgb(150,150,150);stroke:purple;stroke-width:1" />
+   <polygon points="464,88 518,8 460,83" style="fill:rgb(228,228,228);stroke:purple;stroke-width:1" />
+   <polygon points="178,149 239,121 179,118" style="fill:rgb(183,183,183);stroke:purple;stroke-width:1" />
+   <polygon points="239,121 241,72 179,118" style="fill:rgb(228,228,228);stroke:purple;stroke-width:1" />
+   <polygon points="241,72 23,38 179,118" style="fill:rgb(177,177,177);stroke:purple;stroke-width:1" />
+   <polygon points="23,38 178,149 179,118" style="fill:rgb(14,14,14);stroke:purple;stroke-width:1" />
+   <polygon points="310,143 178,149 396,155" style="fill:rgb(17,17,17);stroke:purple;stroke-width:1" />
+   <polygon points="464,88 460,83 396,155" style="fill:rgb(70,70,70);stroke:purple;stroke-width:1" />
+   <polygon points="837,157 584,142 470,154" style="fill:rgb(140,140,140);stroke:purple;stroke-width:1" />
+   <polygon points="396,155 837,157 470,154" style="fill:rgb(112,112,112);stroke:purple;stroke-width:1" />
+   <polygon points="513,130 464,88 470,154" style="fill:rgb(145,145,145);stroke:purple;stroke-width:1" />
+   <polygon points="464,88 396,155 470,154" style="fill:rgb(245,245,245);stroke:purple;stroke-width:1" />
+   <polygon points="584,142 513,130 470,154" style="fill:rgb(3,3,3);stroke:purple;stroke-width:1" />
+   <polygon points="584,142 837,157 775,115" style="fill:rgb(231,231,231);stroke:purple;stroke-width:1" />
+   <polygon points="695,29 584,142 775,115" style="fill:rgb(151,151,151);stroke:purple;stroke-width:1" />
+   <polygon points="768,67 695,29 775,115" style="fill:rgb(76,76,76);stroke:purple;stroke-width:1" />
+   <polygon points="837,157 905,89 775,115" style="fill:rgb(38,38,38);stroke:purple;stroke-width:1" />
+   <polygon points="905,89 817,19 775,115" style="fill:rgb(18,18,18);stroke:purple;stroke-width:1" />
+   <polygon points="817,19 768,67 775,115" style="fill:rgb(95,95,95);stroke:purple;stroke-width:1" />
+   <polygon points="518,8 574,24 612,9" style="fill:rgb(95,95,95);stroke:purple;stroke-width:1" />
+   <polygon points="695,29 817,19 612,9" style="fill:rgb(127,127,127);stroke:purple;stroke-width:1" />
+   <polygon points="241,72 275,94 282,60" style="fill:rgb(233,233,233);stroke:purple;stroke-width:1" />
+   <polygon points="518,8 23,38 282,60" style="fill:rgb(98,98,98);stroke:purple;stroke-width:1" />
+   <polygon points="23,38 241,72 282,60" style="fill:rgb(244,244,244);stroke:purple;stroke-width:1" />
+   <polygon points="460,83 518,8 282,60" style="fill:rgb(153,153,153);stroke:purple;stroke-width:1" />
+   <polygon points="275,94 310,143 282,60" style="fill:rgb(215,215,215);stroke:purple;stroke-width:1" />
+   <polygon points="310,143 396,155 282,60" style="fill:rgb(194,194,194);stroke:purple;stroke-width:1" />
+   <polygon points="396,155 460,83 282,60" style="fill:rgb(91,91,91);stroke:purple;stroke-width:1" />
+   <polygon points="574,24 584,142 628,16" style="fill:rgb(127,127,127);stroke:purple;stroke-width:1" />
+   <polygon points="612,9 574,24 628,16" style="fill:rgb(3,3,3);stroke:purple;stroke-width:1" />
+   <polygon points="584,142 695,29 628,16" style="fill:rgb(246,246,246);stroke:purple;stroke-width:1" />
+   <polygon points="695,29 612,9 628,16" style="fill:rgb(150,150,150);stroke:purple;stroke-width:1" />
+   <circle cx="275" cy="94" r="3" fill="blue" />
+   <circle cx="178" cy="149" r="3" fill="blue" />
+   <circle cx="905" cy="89" r="3" fill="blue" />
+   <circle cx="837" cy="157" r="3" fill="blue" />
+   <circle cx="239" cy="121" r="3" fill="blue" />
+   <circle cx="464" cy="88" r="3" fill="blue" />
+   <circle cx="574" cy="24" r="3" fill="blue" />
+   <circle cx="241" cy="72" r="3" fill="blue" />
+   <circle cx="584" cy="142" r="3" fill="blue" />
+   <circle cx="695" cy="29" r="3" fill="blue" />
+   <circle cx="310" cy="143" r="3" fill="blue" />
+   <circle cx="513" cy="130" r="3" fill="blue" />
+   <circle cx="910" cy="49" r="3" fill="blue" />
+   <circle cx="518" cy="8" r="3" fill="blue" />
+   <circle cx="768" cy="67" r="3" fill="blue" />
+   <circle cx="817" cy="19" r="3" fill="blue" />
+   <circle cx="23" cy="38" r="3" fill="blue" />
+   <circle cx="460" cy="83" r="3" fill="blue" />
+   <circle cx="179" cy="118" r="3" fill="blue" />
+   <circle cx="396" cy="155" r="3" fill="blue" />
+   <circle cx="470" cy="154" r="3" fill="blue" />
+   <circle cx="775" cy="115" r="3" fill="blue" />
+   <circle cx="612" cy="9" r="3" fill="blue" />
+   <circle cx="282" cy="60" r="3" fill="blue" />
+   <circle cx="628" cy="16" r="3" fill="blue" />
+</svg>
