@@ -15,16 +15,18 @@
     $( document ).ready( function() {
 
 	var config = {
-	    fillTriangles : true,
-	    drawPoints    : true,
-	    drawEdges     : false,
-	    pointCount    : 25,
-	    fullSize      : true,
-	    triangulate   : false,
-	    loadImage     : function() { $('input#image').trigger('click'); },
-	    randomize     : function() { randomPoints(true,false); if( config.triangulate ) triangulate(); },
-	    fullCover     : function() { randomPoints(true,true); if( config.triangulate ) triangulate(); },
-	    exportSVG     : function() { exportSVG(); }
+	    fillTriangles  : true,
+	    drawPoints     : true,
+	    drawEdges      : false,
+	    pointCount     : 25,
+	    fullSize       : true,
+	    triangulate    : false,
+	    loadImage      : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    randomize      : function() { randomPoints(true,false); if( config.triangulate ) triangulate(); },
+	    fullCover      : function() { randomPoints(true,true); if( config.triangulate ) triangulate(); },
+	    exportSVG      : function() { exportSVG(); },
+	    exportPointset : function() { exportPointset(); },
+	    importPointset : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
 	};
 	
 	var $canvas          = $( 'canvas#my-canvas' );
@@ -223,7 +225,7 @@
 	};
 
 	// +---------------------------------------------------------------------------------
-	// | Initially draw the image (to fill the background).
+	// | Handle a dropped image: initially draw the image (to fill the background).
 	// +-------------------------------
 	var handleImage = function(e) {
 	    var reader = new FileReader();
@@ -245,7 +247,49 @@
 	    }
 	    reader.readAsDataURL(e.target.files[0]);     
 	}
-	$( 'input#image' ).change( handleImage );
+
+
+	// +---------------------------------------------------------------------------------
+	// | Handle a dropped JSON file (pointset data).
+	// +-------------------------------
+	var handlePointset = function(e) {
+	    var reader = new FileReader();
+	    reader.onload = function(event){
+		var json = event.target.result;
+		console.log('JSON: ' + json );
+		try {
+		    var pointset = JSON.parse(json);
+		    console.log( JSON.stringify(pointset) );
+		    pointList = [];
+		    for( i in pointset ) {
+			var tuple = pointset[i];
+			pointList.push( new Point(tuple.x,tuple.y) );
+		    }
+		    redraw();
+		} catch( e ) {
+		    console.log( e );
+		}
+	    }
+	    reader.readAsText(e.target.files[0]);     
+	}
+
+	
+	// +---------------------------------------------------------------------------------
+	// | Decide which file type should be handled (image or JSON).
+	// +-------------------------------
+	var handleFile = function(e) {
+	    var type = $( 'input#file' ).data('type');
+	    console.log('upload type: ' + type );
+	    if( type == 'image-upload' ) {
+		handleImage(e);
+	    } else if( type == 'pointset-upload' ) {
+		handlePointset(e);
+	    } else {
+		console.log('Unrecognized upload type: ' + type );
+	    }
+	    
+	}
+	$( 'input#file' ).change( handleFile );
 
 
 	// +---------------------------------------------------------------------------------
@@ -352,27 +396,11 @@
 	    buffer.push( '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' );
 	    buffer.push( '   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' );
 	    buffer.push( '<svg width="' + canvasSize.width + '" height="' + canvasSize.height + '" version="1.1" ' );
-	    buffer.push( '   xmlns="http://www.w3.org/2000/svg">' );
-	    //  if( image ) {
-	    //	ctx.drawImage(image,0,0);
-	    //  } else {
-	    //	ctx.fillStyle = 'white';
-	    //	ctx.fillRect(0,0,canvasSize.width,canvasSize.height);
-	    //  }	    
+	    buffer.push( '   xmlns="http://www.w3.org/2000/svg">' );	    
 
 	    // Draw triangles
 	    for( var i in triangles ) {
 		var t = triangles[i];
-		/*if( !t.color ) {
-		    if( !image ) {
-			t.color = randomGreyscale().cssRGB();
-		    } else {
-			// Pick color from inside triangle
-			t.color = getAverageColorInTriangle( imageBuffer, t );
-		    }
-		}*/
-		//drawTriangle( t, t.color );
-		//console.log( t.color );
 		var color = (t.color!=null ? t.color : randomGreyscale().cssRGB());
 		buffer.push( '   <polygon points="' + t.a.x + ',' + t.a.y + ' '+t.b.x+','+t.b.y+' '+t.c.x+','+t.c.y+'" style="fill:'+color+(config.drawEdges?';stroke:purple;stroke-width:1':'')+'" />' );
 	    }
@@ -381,12 +409,6 @@
 	    if( config.drawPoints ) {
 		for( var i in pointList ) {
 		    var p = pointList[i];
-		    //drawPoint( p, 'blue' );
-		    //var radius = 3;
-		    //ctx.beginPath();
-		    //ctx.arc( p.x, p.y, radius, 0, 2 * Math.PI, false );
-		    //ctx.fillStyle = color;
-		    //ctx.fill();
 		    buffer.push( '   <circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="blue" />' );
 		}
 	    }
@@ -400,6 +422,19 @@
 	    });
 	    saveAs(blob,'triangulation.svg');
 	};
+
+	
+	// +---------------------------------------------------------------------------------
+	// | This function exports the point set as a JSON string.
+	// +-------------------------------
+	var exportPointset = function() {
+	    var json = JSON.stringify(pointList);
+	    var blob = new Blob([json], {
+		type: 'application/json;charset=utf-8'
+	    });
+	    saveAs(blob,'pointset.json');	    
+	};
+	
 	
 	// +---------------------------------------------------------------------------------
 	// | Initialize dat.gui
@@ -417,6 +452,8 @@
 	    gui.add(config, 'randomize').name('Randomize').title("Randomize the point set.");
 	    gui.add(config, 'fullCover').name('Full Cover').title("Randomize the point set with full canvas coverage.");
 	    gui.add(config, 'exportSVG').name('Export SVG').title("Export the current triangulation as a vector image.");
+	    gui.add(config, 'exportPointset').name('Export point set').title("Export the point set as JSON.");
+	    gui.add(config, 'importPointset').name('Import point set').title("Import the point set from JSON.");
 	    //dat.gui.GUI.toggleHide();
 	    //gui.closed = true;
 	    
