@@ -15,19 +15,20 @@
     $( document ).ready( function() {
 
 	var config = {
-	    fillTriangles  : true,
-	    drawPoints     : true,
-	    drawEdges      : false,
-	    pointCount     : 25,
-	    fullSize       : true,
-	    triangulate    : false,
-	    loadImage      : function() { $('input#file').data('type','image-upload').trigger('click'); },
-	    clear          : function() { pointList = []; triangles = []; redraw(); },
-	    randomize      : function() { randomPoints(true,false); if( config.triangulate ) triangulate(); },
-	    fullCover      : function() { randomPoints(true,true); if( config.triangulate ) triangulate(); },
-	    exportSVG      : function() { exportSVG(); },
-	    exportPointset : function() { exportPointset(); },
-	    importPointset : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
+	    fillTriangles     : true,
+	    drawPoints        : true,
+	    drawEdges         : false,
+	    pointCount        : 25,
+	    fullSize          : true,
+	    triangulate       : false,
+	    loadImage         : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    clear             : function() { pointList = []; triangles = []; redraw(); },
+	    randomize         : function() { randomPoints(true,false,false); if( config.triangulate ) triangulate(); },
+	    fullCover         : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
+	    fullCoverExtended : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
+	    exportSVG         : function() { exportSVG(); },
+	    exportPointset    : function() { exportPointset(); },
+	    importPointset    : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
 	};
 	
 	var $canvas          = $( 'canvas#my-canvas' );
@@ -175,7 +176,15 @@
 	    if( bounds.width < 1 || bounds.height < 1 )
 		return randomGreyscale().cssRGB();
 
-	    //console.log( 'triangle bounds: ' + JSON.stringify(bounds) );
+	    // Get the 'average' color by picking a random pixel inside the bounds.
+	    // This pixel must be inside the canvas.
+	    bounds.xMin = Math.max(0,bounds.xMin);
+	    bounds.yMin = Math.max(0,bounds.yMin);
+	    bounds.xMax = Math.min(canvasSize.width-1,bounds.xMax);
+	    bounds.yMax = Math.min(canvasSize.height-1,bounds.yMax);
+	    bounds.width = bounds.xMax-bounds.xMin;
+	    bounds.height = bounds.yMax-bounds.yMin;
+	    
 	    
 	    var pixelData = imageBuffer.getContext('2d').getImageData(bounds.xMin, bounds.yMin, bounds.width, bounds.height).data;
 	    var rgba  = { r : pixelData[0], g : pixelData[1], b : pixelData[2], a : pixelData[3] };
@@ -184,7 +193,7 @@
 	    var x     = bounds.xMin;
 	    var y     = bounds.yMin;
 	    for( var i = 4; i < n; i += 4 ) {
-		if( !tri.containsPoint({ x : x, y : y }) )
+		if( !tri.containsPoint({ x : x, y : y }) || x < 0 || x >= canvasSize.width || y < 0 || y >= canvasSize.height )
 		    continue;
 		
 		rgba.r += pixelData[i];

@@ -9,6 +9,8 @@ Feature list
  * Triangulate point set.
  * Use triangulation colors from image.
  * Export SVG images.
+ * Export vertex list (JSON file).
+ * Import vertext list (JSON file).
 
 
 ![A simple triangulation with 25 points](triangulation-a.png)
@@ -18,6 +20,9 @@ Feature list
 
 
 ![A simple triangulation of a photo](IMG_20170901_232450_800x600_triangulation.svg)
+
+It is also safe to add vertices outside the bounding box (when load via JSON).
+![Bounds safe color picker](screenshot-safe-border-20180308.png)
 
 
  Live demo at http://int2byte.de/public/image-triangulation/main.html
