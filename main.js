@@ -22,6 +22,7 @@
 	    fullSize       : true,
 	    triangulate    : false,
 	    loadImage      : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    clear          : function() { pointList = []; triangles = []; redraw(); },
 	    randomize      : function() { randomPoints(true,false); if( config.triangulate ) triangulate(); },
 	    fullCover      : function() { randomPoints(true,true); if( config.triangulate ) triangulate(); },
 	    exportSVG      : function() { exportSVG(); },
@@ -77,6 +78,21 @@
 	    return value;
 	};
 
+
+	// +---------------------------------------------------------------------------------
+	// | Locates the point (index) at the passed position. Using an internal tolerance of 3 pixels.
+	// | Returns -1 if no point is near the passed position.
+	// +-------------------------------
+	var locatePointNear = function( x, y ) {
+	    var tolerance = 3;
+	    for( i in pointList ) {
+		var p = pointList[i];
+		let dist = Math.sqrt( Math.pow(x-p.x,2) + Math.pow(y-p.y,2) );
+		if( dist <= tolerance )
+		    return i;
+	    }
+	    return -1;
+	}
 	
 
 	// +---------------------------------------------------------------------------------
@@ -439,7 +455,8 @@
 	// +---------------------------------------------------------------------------------
 	// | Initialize dat.gui
 	// +-------------------------------
-	$(document).ready( function() { 
+// 	$(document).ready( function()
+        { 
 	    var gui = new dat.gui.GUI();
 	    gui.remember(config);
 	    gui.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
@@ -448,6 +465,7 @@
 	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
+	    gui.add(config, 'clear').name('Clear all').title("Clear all.");
 	    gui.add(config, 'loadImage').name('Load Image').title("Load a background image to pick triangle colors from.");
 	    gui.add(config, 'randomize').name('Randomize').title("Randomize the point set.");
 	    gui.add(config, 'fullCover').name('Full Cover').title("Randomize the point set with full canvas coverage.");
@@ -457,8 +475,56 @@
 	    //dat.gui.GUI.toggleHide();
 	    //gui.closed = true;
 	    
-	} );
+	}
+	// );
 
+
+	// +---------------------------------------------------------------------------------
+	// | Handle left-click and tap event
+	// +-------------------------------
+	function handleTap(x,y) {
+	    pointList.push( new Point(x,y) );
+	    redraw();
+	}
+
+	var canvasDragged = false;
+	var dragPointIndex = -1;
+	$canvas.mousedown(function(e) {
+	    if( e.which != 1 )
+		return; // Only react on eft mouse
+	    canvasDragged = false;
+	    var posX = $(this).offset().left,
+		posY = $(this).offset().top;
+	    var x = e.pageX - posX, y = e.pageY - posY;
+	    dragPointIndex = locatePointNear(x,y);
+	} );
+	$canvas.mousemove(function(e) {
+	    canvasDragged = true;
+	    if( dragPointIndex != -1 ) {
+		var posX = $(this).offset().left,
+		    posY = $(this).offset().top;
+		var x = e.pageX - posX, y = e.pageY - posY;
+		pointList[dragPointIndex].x = x;
+		pointList[dragPointIndex].y = y;
+		redraw();
+		//drawPoint( pointList[dragPointIndex], 'grey' );
+	    }
+	} );
+	$canvas.mouseup(function(e) {
+	    if( e.which != 1 )
+		return; // Only react on eft mouse
+	    if( !canvasDragged ) {
+		var posX = $(this).offset().left,
+		    posY = $(this).offset().top;
+		handleTap( e.pageX - posX, e.pageY - posY );
+	    }
+	    canvasDragged = false;
+	    dragPointIndex = -1;
+	} );
+	
+	// Inlcude jquery-mobile for this:
+	//    $canvas.on('tap', handleTap );
+	
 
 	// Init
 	randomPoints(true); // clear
