@@ -210,12 +210,14 @@
 	// | The re-drawing function.
 	// +-------------------------------
 	var redraw = function() {
+	    // Note that the image might have an alpha channel. Clear the scene first.
+	    ctx.fillStyle = 'white';
+	    ctx.fillRect(0,0,canvasSize.width,canvasSize.height);
+
+	    // Draw the background image?
 	    if( image ) {
 		ctx.drawImage(image,0,0);
-	    } else {
-		ctx.fillStyle = 'white';
-		ctx.fillRect(0,0,canvasSize.width,canvasSize.height);
-	    }
+	    } 
 
 	    // Draw triangles
 	    for( var i in triangles ) {
