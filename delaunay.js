@@ -32,8 +32,12 @@ window.Delaunay = function( pointList, config ) {
 	function Vertex( x, y ) {
 	    this.x = x;
 	    this.y = y;
-	    
-	} // END Vertex
+
+	    this.clone = function() {
+		return new Vertex(this.x,this.y);
+	    };
+	}
+        // END Vertex
     
 	//------------------------------------------------------------
 	// Triangle class
@@ -43,7 +47,7 @@ window.Delaunay = function( pointList, config ) {
 	    this.b = b;
 	    this.c = c;
 
-	    this.CalcCircumcircle();
+	    this.calcCircumcircle();
 	    
 	} // END Triangle
 
@@ -64,7 +68,29 @@ window.Delaunay = function( pointList, config ) {
 
 	var EPSILON = 1.0e-6;
 
-	Triangle.prototype.CalcCircumcircle = function() 	{
+        // Currrently not in use
+        /*Triangle.prototype.getCentroid = function() {
+	    return new Vertex( (this.a.x + this.b.x + this.c.x),
+			       (this.a.y + this.b.y + this.x.y)
+			     );
+	};*/
+    
+        
+        Triangle.prototype.getCircumcircle = function() {
+	    if( !this.center || !this.radius ) 
+		this.calcCircumcircle();
+	    return { center : this.center.clone(), radius : this.radius };
+	};
+
+        /* 
+        Triangle.prototype.getCircumCenter = function() {
+	    if( !this.center ) 
+		this.calcCircumcircle();
+	    return  this.center.clone();
+	};
+	*/
+	    
+	Triangle.prototype.calcCircumcircle = function() 	{
 	    // From: http://www.exaflop.org/docs/cgafaq/cga1.html
 
 	    var A = this.b.x - this.a.x; 
@@ -98,16 +124,16 @@ window.Delaunay = function( pointList, config ) {
 
 	    this.radius_squared = dx * dx + dy * dy;
 	    this.radius = Math.sqrt( this.radius_squared );
-	}; // CalcCircumcircle
+	}; // calcCircumcircle
 
-        Triangle.prototype.InCircumcircle = function( v ) {
+        Triangle.prototype.inCircumcircle = function( v ) {
 	    var dx = this.center.x - v.x;
 	    var dy = this.center.y - v.y;
 	    var dist_squared = dx * dx + dy * dy;
 
 	    return ( dist_squared <= this.radius_squared );
 	    
-	}; // InCircumcircle
+	}; // inCircumcircle
 
 
         Triangle.prototype.bounds = function() {
@@ -234,7 +260,7 @@ window.Delaunay = function( pointList, config ) {
 	    for( i in triangles ) {
 		var triangle = triangles[i];
 
-		if( triangle.InCircumcircle( vertex ) ) {
+		if( triangle.inCircumcircle( vertex ) ) {
 		    edges.push( new Edge( triangle.a, triangle.b ) );
 		    edges.push( new Edge( triangle.b, triangle.c ) );
 		    edges.push( new Edge( triangle.c, triangle.a ) );

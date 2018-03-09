@@ -16,11 +16,14 @@
 
 	var config = {
 	    fillTriangles     : true,
+	    fillAlphaOnly     : false,
 	    drawPoints        : true,
 	    drawEdges         : false,
+	    optimizeGaps      : true,
 	    pointCount        : 25,
 	    fullSize          : true,
 	    triangulate       : false,
+	    backgroundColor   : '#ffffff',
 	    loadImage         : function() { $('input#file').data('type','image-upload').trigger('click'); },
 	    clear             : function() { pointList = []; triangles = []; redraw(); },
 	    randomize         : function() { randomPoints(true,false,false); if( config.triangulate ) triangulate(); },
@@ -48,7 +51,21 @@
 	var Point = function(x,y) {
 	    this.x = x;
 	    this.y = y;
+
+	    this.clone = function() {
+		return new Point(this.x,this.y);
+	    };
+	    
+	    var _self = this;
+	    this.scale = function( factor, center ) {
+		if( !center || typeof center === "undefined" )
+		    ; //center = Point.ORIGIN;
+		_self.x = center.x + (_self.x-center.x)*factor;
+		_self.y = center.y + (_self.y-center.y)*factor;
+		return this;
+	    };
 	};
+	Point.ORIGIN = new Point(0,0);
 	
 	
 	// A list of point-velocity-pairs.
@@ -176,6 +193,8 @@
 	    if( bounds.width < 1 || bounds.height < 1 )
 		return randomGreyscale().cssRGB();
 
+	    var bgColor = Color.makeHEX( config.backgroundColor );
+
 	    // Get the 'average' color by picking a random pixel inside the bounds.
 	    // This pixel must be inside the canvas.
 	    bounds.xMin = Math.max(0,bounds.xMin);
@@ -192,10 +211,11 @@
 	    var count = 1;
 	    var x     = bounds.xMin;
 	    var y     = bounds.yMin;
+	    console.log('image buffer size for triangle: ' + n );
 	    for( var i = 4; i < n; i += 4 ) {
 		if( !tri.containsPoint({ x : x, y : y }) || x < 0 || x >= canvasSize.width || y < 0 || y >= canvasSize.height )
 		    continue;
-		
+
 		rgba.r += pixelData[i];
 		rgba.g += pixelData[i+1];
 		rgba.b += pixelData[i+2];
@@ -208,11 +228,25 @@
 		}
 		    
 	    }
-	    rgba.r /= count;
-	    rgba.g /= count;
-	    rgba.b /= count;
-	    rgba.a /= count;
-	    return Color.makeRGB( rgba.r, rgba.g, rgba.b, 0.5 ).cssRGBA(); // randomGreyscale().cssRGB();
+
+	    // Map alpha from 0..255 to 0..1
+	    rgba.a = Math.max(0.0, Math.min(1.0, (rgba.a/count)/255.0) );
+	    if( !config.fillAlphaOnly ) {
+		rgba.r /= count;
+		rgba.g /= count;
+		rgba.b /= count;
+	    } else {
+		rgba.r = bgColor.r;
+		rgba.g = bgColor.g;
+		rgba.b = bgColor.b;
+		//console.log('[getAverageColorInTriangle] using image.alpha ('+rgba.a+') and background.color ('+bgColor.cssRGB()+')' );
+	    }
+	    //console.log( 'final triangle alpha: ' + Color.makeRGB( rgba.r, rgba.g, rgba.b, rgba.a ).a );
+	    //var finalColor = Color.makeRGB( rgba.r, rgba.g, rgba.b );
+	    //finalColor.a = rgba.a;
+	    //console.log( 'Making CSS color from (RGBA)=' + finalColor.r +', ' + finalColor.g + ', ' + finalColor.b + ', ' + finalColor.a );
+	    //return finalColor.cssRGBA(); // randomGreyscale().cssRGB();
+	    return Color.makeRGB( rgba.r, rgba.g, rgba.b, rgba.a ).cssRGBA(); 
 	};
 
 	// +---------------------------------------------------------------------------------
@@ -220,7 +254,8 @@
 	// +-------------------------------
 	var redraw = function() {
 	    // Note that the image might have an alpha channel. Clear the scene first.
-	    ctx.fillStyle = 'white';
+	    console.log( '[redraw] config.backgroundColor=' + config.backgroundColor );
+	    ctx.fillStyle = config.backgroundColor; // 'white';
 	    ctx.fillRect(0,0,canvasSize.width,canvasSize.height);
 
 	    // Draw the background image?
@@ -237,6 +272,7 @@
 		    } else {
 			// Pick color from inside triangle
 			t.color = getAverageColorInTriangle( imageBuffer, t );
+			//console.log( 'Fetched color for triangle: ' + t.color );
 		    }
 		}
 		drawTriangle( t, t.color );
@@ -255,6 +291,13 @@
 	// | Handle a dropped image: initially draw the image (to fill the background).
 	// +-------------------------------
 	var handleImage = function(e) {
+
+	    var validImageTypes = "image/gif,image/jpeg,image/jpg,image/gif,image/png";
+	    if( validImageTypes.indexOf(e.target.files[0].type) == -1 ) {
+		if( !window.confirm('This seems not to be an image ('+e.target.files[0].type+'). Continue?') )
+		    return;
+	    }
+	    
 	    var reader = new FileReader();
 	    reader.onload = function(event){
 		image = new Image();
@@ -302,7 +345,9 @@
 
 	
 	// +---------------------------------------------------------------------------------
-	// | Decide which file type should be handled (image or JSON).
+	// | Decide which file type should be handled:
+	// |  - image for the backgounrd or
+	// |  - JSON for the point set)
 	// +-------------------------------
 	var handleFile = function(e) {
 	    var type = $( 'input#file' ).data('type');
@@ -326,7 +371,21 @@
 	    //console.log( window.Delaunay );
 	    var delau = new Delaunay( pointList, {} );
 	    triangles  = delau.triangulate();
-	    // console.log( triangles );
+
+	    // Optimize triangles?
+	    if( config.optimizeGaps > 0 ) {
+		for( i in triangles ) {
+		    var tri = triangles[i];
+		    var circumCircle = tri.getCircumcircle(); // { center:Vector, radius:Number }
+		    var scaleFactor = (circumCircle.radius+0.1) / circumCircle.radius;
+		    console.log( 'scaleFactor=' + scaleFactor + ', center=' + JSON.stringify(circumCircle.center) + ', radius=' + circumCircle.radius );
+		    
+		    tri.a = tri.a.clone().scale( scaleFactor, circumCircle.center );
+		    tri.b = tri.b.clone().scale( scaleFactor, circumCircle.center );
+		    tri.c = tri.c.clone().scale( scaleFactor, circumCircle.center );
+		}
+	    }
+	    
 	    redraw();
 	};
 
@@ -466,16 +525,18 @@
 	// +---------------------------------------------------------------------------------
 	// | Initialize dat.gui
 	// +-------------------------------
-// 	$(document).ready( function()
         { 
 	    var gui = new dat.gui.GUI();
 	    gui.remember(config);
 	    gui.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
 	    gui.add(config, 'triangulate').onChange( function() { if(config.triangulate) triangulate(); else triangles=[]; redraw(); } ).title("Triangulate the point set?");
 	    gui.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled.");
+	    gui.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
 	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
+	    gui.add(config, 'optimizeGaps').onChange( function() { if(config.triangulate) triangulate(); redraw(); } ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
+	    gui.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
 	    gui.add(config, 'clear').name('Clear all').title("Clear all.");
 	    gui.add(config, 'loadImage').name('Load Image').title("Load a background image to pick triangle colors from.");
 	    gui.add(config, 'randomize').name('Randomize').title("Randomize the point set.");
@@ -487,7 +548,6 @@
 	    //gui.closed = true;
 	    
 	}
-	// );
 
 
 	// +---------------------------------------------------------------------------------

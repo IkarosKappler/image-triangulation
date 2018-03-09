@@ -12,7 +12,7 @@ Color.prototype.cssRGB = function() {
     return "rgb("+Math.round(255*this.r)+","+Math.round(255*this.g)+","+Math.round(255*this.b)+")";
 };
 Color.prototype.cssRGBA = function() {
-    return "rgba("+Math.round(255*this.r)+","+Math.round(255*this.g)+","+Math.round(255*this.b)+","+Math.round(this.a)+")";
+    return "rgba("+Math.round(255*this.r)+","+Math.round(255*this.g)+","+Math.round(255*this.b)+","+this.a+")";
 };
 Color.prototype.red = function() { return this.r; };
 Color.prototype.green = function() { return this.g; };
@@ -118,6 +118,10 @@ Color.makeHSL = function() {
 Color.makeHEX = function(value) {
     var c = new Color(),
         sanitized;
+    // Edit Ika 2018-0308
+    // Allow leading '#'
+    if( value && value.startsWith('#') )
+	value = value.substr(1);
     Color.Validator.checkHEX(value);
     if(value.length == 3) {
         sanitized = Color.Sanitizer.RGB(
