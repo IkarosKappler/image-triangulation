@@ -19,7 +19,7 @@
 	    fillAlphaOnly     : false,
 	    drawPoints        : true,
 	    drawEdges         : false,
-	    optimizeGaps      : true,
+	    optimizeGaps      : false,
 	    pointCount        : 25,
 	    fullSize          : true,
 	    triangulate       : false,
