@@ -15,23 +15,24 @@
     $( document ).ready( function() {
 
 	var config = {
-	    fillTriangles     : true,
-	    fillAlphaOnly     : false,
-	    drawPoints        : true,
-	    drawEdges         : false,
-	    optimizeGaps      : false,
-	    pointCount        : 25,
-	    fullSize          : true,
-	    triangulate       : false,
-	    backgroundColor   : '#ffffff',
-	    loadImage         : function() { $('input#file').data('type','image-upload').trigger('click'); },
-	    clear             : function() { pointList = []; triangles = []; redraw(); },
-	    randomize         : function() { randomPoints(true,false,false); if( config.triangulate ) triangulate(); },
-	    fullCover         : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
-	    fullCoverExtended : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
-	    exportSVG         : function() { exportSVG(); },
-	    exportPointset    : function() { exportPointset(); },
-	    importPointset    : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
+	    fillTriangles      : true,
+	    makeVoronoiDiagram : false,
+	    fillAlphaOnly      : false,
+	    drawPoints         : true,
+	    drawEdges          : false,
+	    optimizeGaps       : false,
+	    pointCount         : 25,
+	    fullSize           : true,
+	    triangulate        : false,
+	    backgroundColor    : '#ffffff',
+	    loadImage          : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    clear              : function() { pointList = []; triangles = []; redraw(); },
+	    randomize          : function() { randomPoints(true,false,false); if( config.triangulate ) triangulate(); },
+	    fullCover          : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
+	    fullCoverExtended  : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
+	    exportSVG          : function() { exportSVG(); },
+	    exportPointset     : function() { exportPointset(); },
+	    importPointset     : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
 	};
 	
 	var $canvas          = $( 'canvas#my-canvas' );
@@ -40,6 +41,7 @@
 	var image            = null; // An image.
 	var imageBuffer      = null; // A canvas to read the pixel data from.
 	var triangles        = [];
+	var voronoiDiagram   = [];
 	
 	var getFloat = function(selector) {
 	    return parseFloat( $(selector).val() );
@@ -48,6 +50,8 @@
 	var canvasSize = { width : DEFAULT_CANVAS_WIDTH, height : DEFAULT_CANVAS_HEIGHT };
 
 	// A very basic point class.
+	// REPLACED BY Vertex CLASS.
+	/*
 	var Point = function(x,y) {
 	    this.x = x;
 	    this.y = y;
@@ -66,7 +70,7 @@
 	    };
 	};
 	Point.ORIGIN = new Point(0,0);
-	
+	*/
 	
 	// A list of point-velocity-pairs.
 	var pointList  = [];
@@ -117,7 +121,7 @@
 	// | Generates a random point inside the canvas bounds.
 	// +-------------------------------
 	var randomPoint = function() {
-	    return new Point( randomInt(canvasSize.width), randomInt(canvasSize.height) );
+	    return new Vertex( randomInt(canvasSize.width), randomInt(canvasSize.height) );
 	};
 
 	// +---------------------------------------------------------------------------------
@@ -333,7 +337,7 @@
 		    pointList = [];
 		    for( i in pointset ) {
 			var tuple = pointset[i];
-			pointList.push( new Point(tuple.x,tuple.y) );
+			pointList.push( new Vertex(tuple.x,tuple.y) );
 		    }
 		    redraw();
 		} catch( e ) {
@@ -389,6 +393,57 @@
 	    redraw();
 	};
 
+
+	// +---------------------------------------------------------------------------------
+	// | Convert the triangle set to the Voronoi diagram.
+	// +-------------------------------
+	var makeVoronoiDiagram = function() {
+
+	    voronoiDiagram = [];
+	    
+	    //var visitedTriangles= {};
+	    for( var t in triangles ) {
+		var tri = triangles[t];
+		// Find adjacent triangles for first point
+		var adjacentSubset = []; 
+		for( var u in triangles ) {
+		    if( t == u )
+			continue;
+		    //console.log( "isAdjacent=" + tri.isAdjacent(triangles[u]) );
+		    if( tri.isAdjacent(triangles[u]) )
+			adjacentSubset.push( triangles[u] );
+		}
+		console.log( "[makeVoronoiDiagram] adjacent=" + JSON.stringify(adjacentSubset) );
+		var path = subsetToPath(adjacentSubset);
+		voronoiDiagram.push( path );
+	    }
+
+	    console.log( "[makeVoronoiDiagram] " + JSON.stringify(voronoiDiagram) );
+	};
+
+	// Re-order a tiangle subset so the triangle define a single path.
+	var subsetToPath = function( triangleSet ) {
+	    if( triangleSet.length == 0 )
+		return [];
+	    
+	    var result  = [];
+	    var t       = 0;
+	    var visited = [ t ];
+	    for( var i = 0; i < triangleSet.length; i++ ) {
+		if( t == i )
+		    continue;
+		if( visited.indexOf(i) != -1 )
+		    continue;
+		if( triangleSet[t].isAdjacent(triangleSet[i]) ) {
+		    result.push(triangleSet[i]);
+		    t = i;
+		    i = 0;
+		}
+		visited.push(i);
+	    }
+	    return result;
+	}
+	
 	// +---------------------------------------------------------------------------------
 	// | Add n random points.
 	// +-------------------------------
@@ -404,22 +459,22 @@
 		var vCount          = (borderPoints/2)-hCount;
 		console.log( 'remainingPoints=' + remainingPoints + ', borderPoints=' + borderPoints + ', hCount=' + hCount + ', vCount=' + vCount );
 		while( vCount > 0 ) {
-		    pointList.push( new Point(0, randomInt(canvasSize.height)) );
-		    pointList.push( new Point(canvasSize.width, randomInt(canvasSize.height)) );		    
+		    pointList.push( new Vertex(0, randomInt(canvasSize.height)) );
+		    pointList.push( new Vertex(canvasSize.width, randomInt(canvasSize.height)) );		    
 		    vCount--;
 		}
 		
 		while( hCount > 0 ) {
-		    pointList.push( new Point(randomInt(canvasSize.width),0) );
-		    pointList.push( new Point(randomInt(canvasSize.width),canvasSize.height) );		    
+		    pointList.push( new Vertex(randomInt(canvasSize.width),0) );
+		    pointList.push( new Vertex(randomInt(canvasSize.width),canvasSize.height) );		    
 		    hCount--;
 		}
 
 		// Additionally add 4 points to the corners
-		pointList.push( new Point(0,0) );
-		pointList.push( new Point(canvasSize.width,0) );
-		pointList.push( new Point(canvasSize.width,canvasSize.height) );
-		pointList.push( new Point(0,canvasSize.height) );
+		pointList.push( new Vertex(0,0) );
+		pointList.push( new Vertex(canvasSize.width,0) );
+		pointList.push( new Vertex(canvasSize.width,canvasSize.height) );
+		pointList.push( new Vertex(0,canvasSize.height) );
 		
 	    }
 	    
@@ -530,6 +585,7 @@
 	    gui.remember(config);
 	    gui.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
 	    gui.add(config, 'triangulate').onChange( function() { if(config.triangulate) triangulate(); else triangles=[]; redraw(); } ).title("Triangulate the point set?");
+	    gui.add(config, 'makeVoronoiDiagram').onChange( function() { if( triangles.length == 0 ) triangulate(); makeVoronoiDiagram(); redraw(); } ).title("Make voronoi diagram from the triangle set.");
 	    gui.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled.");
 	    gui.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
 	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
@@ -554,7 +610,7 @@
 	// | Handle left-click and tap event
 	// +-------------------------------
 	function handleTap(x,y) {
-	    pointList.push( new Point(x,y) );
+	    pointList.push( new Vertex(x,y) );
 	    redraw();
 	}
 
@@ -592,10 +648,6 @@
 	    canvasDragged = false;
 	    dragPointIndex = -1;
 	} );
-	
-	// Inlcude jquery-mobile for this:
-	//    $canvas.on('tap', handleTap );
-	
 
 	// Init
 	randomPoints(true); // clear

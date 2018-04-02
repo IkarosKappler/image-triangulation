@@ -8,6 +8,35 @@
  * @version   2.0.0
  **/
 
+//------------------------------------------------------------
+// Vertex class
+//------------------------------------------------------------
+window.Vertex = function( x, y ) {
+    this.x = x;
+    this.y = y;
+    
+    this.clone = function() {
+	return new Vertex(this.x,this.y);
+    };
+}
+Vertex.prototype.eq = function( vertex ) {
+    return
+        Math.abs(this.x-vertex.x) < 1 // EPSILON
+	&&
+	Math.abs(this.y-vertex.y) < 1 // EPSILON;
+}
+Vertex.prototype.clone = function() {
+    return new Vertex(this.x,this.y);
+};	    
+Vertex.prototype.scale = function( factor, center ) {
+    if( !center || typeof center === "undefined" )
+	center = new Vertex(0,0);
+    this.x = center.x + (this.x-center.x)*factor;
+    this.y = center.y + (this.y-center.y)*factor;
+    return this;
+};
+// END Vertex
+
 window.Delaunay = function( pointList, config ) {
 
 	var backgroundTexture;
@@ -26,6 +55,7 @@ window.Delaunay = function( pointList, config ) {
 	    return Triangulate( pointList ); // this.vertexSet );
 	}
 
+    /*
 	//------------------------------------------------------------
 	// Vertex class
 	//------------------------------------------------------------
@@ -37,7 +67,14 @@ window.Delaunay = function( pointList, config ) {
 		return new Vertex(this.x,this.y);
 	    };
 	}
-        // END Vertex
+        Vertex.prototype.eq = function( vertex ) {
+	    return
+	        Math.abs(this.x-vertex.x) < EPSILON
+		&&
+		Math.abs(this.y-vertex.y) < EPSILON;
+	}
+    // END Vertex
+    */
     
 	//------------------------------------------------------------
 	// Triangle class
@@ -49,7 +86,8 @@ window.Delaunay = function( pointList, config ) {
 
 	    this.calcCircumcircle();
 	    
-	} // END Triangle
+	}
+        // END Triangle
 
 
 	////////////////////////////////////////////////////////////////////////////////
@@ -82,13 +120,13 @@ window.Delaunay = function( pointList, config ) {
 	    return { center : this.center.clone(), radius : this.radius };
 	};
 
-        /* 
-        Triangle.prototype.getCircumCenter = function() {
-	    if( !this.center ) 
-		this.calcCircumcircle();
-	    return  this.center.clone();
+        Triangle.prototype.isAdjacent = function( tri ) {
+	    var a = this.a.eq(tri.a) || this.a.eq(tri.b) || this.a.eq(tri.c);
+	    var b = this.b.eq(tri.a) || this.b.eq(tri.b) || this.b.eq(tri.c);
+	    var c = this.c.eq(tri.a) || this.c.eq(tri.b) || this.c.eq(tri.c);
+
+	    return (a&&b) || (a&&c) || (b&&c);
 	};
-	*/
 	    
 	Triangle.prototype.calcCircumcircle = function() 	{
 	    // From: http://www.exaflop.org/docs/cgafaq/cga1.html
