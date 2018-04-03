@@ -12,6 +12,9 @@ Feature list
  * Export vertex list (JSON file).
  * Import vertext list (JSON file).
 
+ * Since version 1.0.1 there is also a Voronoi-from-Delaunay computation.
+
+
 
 ![A simple triangulation with 25 points](triangulation-a.png)
 
@@ -25,5 +28,10 @@ It is also safe to add vertices outside the bounding box (when load via JSON).
 ![Bounds safe color picker](screenshot-safe-border-20180308.png)
 
 
- Live demo at http://int2byte.de/public/image-triangulation/main.html
+See the Voronoi diagram (still experimental)
+![Voronoi diagram](voronoi-a-50pct.png "Voronoi Diagram A")
+
+![Voronoi diagram](voronoi-a-with-triangles-50pct.png "Voronoi Diagram A with triangles")
+
+Live demo at http://int2byte.de/public/image-triangulation/main.html
  
