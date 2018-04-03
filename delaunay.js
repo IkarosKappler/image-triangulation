@@ -2,172 +2,18 @@
  * Inspired by
  *    http://www.travellermap.com/tmp/delaunay.htm
  *
- * @author    Ikaros Kappler
- * @date_init 2012-10-17
- * @date      2017-07-31
- * @version   2.0.0
+ * License: Public Domain
+ *          Original C++ code by Joshua Bell
+ *
+ * @modified_by Ikaros Kappler
+ * @date_init   2012-10-17
+ * @date        2017-07-31
+ * @version     2.0.0
  **/
 
 
 var EPSILON = 1.0e-6;
 
-
-//------------------------------------------------------------
-// Vertex class
-//------------------------------------------------------------
-var Vertex = function( x, y ) {
-    this.x = x;
-    this.y = y;
-    
-    /*this.clone = function() {
-	return new Vertex(this.x,this.y);
-    };*/
-}
-Vertex.prototype.equals = function( vertex ) {
-    //console.log( 'EQ? ' + this.toString() + ', ' + vertex.toString() + ', x=' + this.x + ', y=' + this.y + ', absX=' + (Math.abs(this.x-vertex.x) < 1) + ', absY=' + (Math.abs(this.y-vertex.y) < 1) );
-    var eqX =  (Math.abs(this.x-vertex.x) < 1); // EPSILON
-    var eqY =  (Math.abs(this.y-vertex.y) < 1); // EPSILON
-    var result = eqX && eqY;
-    //console.log( eqX, eqY, result );
-    /*
-    return
-        (Math.abs(this.x-vertex.x) < 1) // EPSILON
-	&&
-	(Math.abs(this.y-vertex.y) < 1) // EPSILON
-	;
-    */
-    return result;
-};
-Vertex.prototype.clone = function() {
-    return new Vertex(this.x,this.y);
-};	    
-Vertex.prototype.scale = function( factor, center ) {
-    if( !center || typeof center === "undefined" )
-	center = new Vertex(0,0);
-    this.x = center.x + (this.x-center.x)*factor;
-    this.y = center.y + (this.y-center.y)*factor;
-    return this;
-};
-Vertex.prototype.toString = function() {
-    return '('+this.x+','+this.y+')';
-};
-// END Vertex
-
-
-//------------------------------------------------------------
-// Triangle class
-//------------------------------------------------------------
-function Triangle( a, b, c )	{
-    this.a = a;
-    this.b = b;
-    this.c = c;
-
-    this.calcCircumcircle();
-    
-}
-
-/*
-Triangle.prototype.getCentroid = function() {
-  return new Vertex( (this.a.x + this.b.x + this.c.x)/3,
-		     (this.a.y + this.b.y + this.c.y)/3
-		   );
-};
-*/
-
-Triangle.prototype.getCircumcircle = function() {
-    if( !this.center || !this.radius ) 
-	this.calcCircumcircle();
-    return { center : this.center.clone(), radius : this.radius };
-};
-
-Triangle.prototype.isAdjacent = function( tri ) {
-    //console.log( this.a.equals(tri.a) );
-    var a = this.a.equals(tri.a) || this.a.equals(tri.b) || this.a.equals(tri.c);
-    var b = this.b.equals(tri.a) || this.b.equals(tri.b) || this.b.equals(tri.c);
-    var c = this.c.equals(tri.a) || this.c.equals(tri.b) || this.c.equals(tri.c);
-    //console.log( 'a='+a+', b='+b+', c='+c );
-
-    return (a&&b) || (a&&c) || (b&&c);
-};
-
-Triangle.prototype.calcCircumcircle = function() 	{
-    // From: http://www.exaflop.org/docs/cgafaq/cga1.html
-
-    var A = this.b.x - this.a.x; 
-    var B = this.b.y - this.a.y; 
-    var C = this.c.x - this.a.x; 
-    var D = this.c.y - this.a.y; 
-
-    var E = A*(this.a.x + this.b.x) + B*(this.a.y + this.b.y); 
-    var F = C*(this.a.x + this.c.x) + D*(this.a.y + this.c.y); 
-
-    var G = 2.0*(A*(this.c.y - this.b.y)-B*(this.c.x - this.b.x)); 
-    
-    var dx, dy;
-    
-    if( Math.abs(G) < EPSILON ) {
-	// Collinear - find extremes and use the midpoint		
-	var bounds = this.bounds();
-	this.center = new Vertex( ( bounds.xMin + bounds.xMax ) / 2, ( bounds.yMin + bounds.yMax ) / 2 );
-
-	dx = this.center.x - bounds.xMin;
-	dy = this.center.y - bounds.yMin;
-    } else {
-	var cx = (D*E - B*F) / G; 
-	var cy = (A*F - C*E) / G;
-
-	this.center = new Vertex( cx, cy );
-
-	dx = this.center.x - this.a.x;
-	dy = this.center.y - this.a.y;
-    }
-
-    this.radius_squared = dx * dx + dy * dy;
-    this.radius = Math.sqrt( this.radius_squared );
-}; // calcCircumcircle
-
-Triangle.prototype.inCircumcircle = function( v ) {
-    var dx = this.center.x - v.x;
-    var dy = this.center.y - v.y;
-    var dist_squared = dx * dx + dy * dy;
-
-    return ( dist_squared <= this.radius_squared );
-    
-}; // inCircumcircle
-
-
-Triangle.prototype.bounds = function() {
-    function max3( a, b, c ) { return ( a >= b && a >= c ) ? a : ( b >= a && b >= c ) ? b : c; }
-    function min3( a, b, c ) { return ( a <= b && a <= c ) ? a : ( b <= a && b <= c ) ? b : c; }
-    var minx = min3( this.a.x, this.b.x, this.c.x );
-    var miny = min3( this.a.y, this.b.y, this.c.y );
-    var maxx = max3( this.a.x, this.b.x, this.c.x );
-    var maxy = max3( this.a.y, this.b.y, this.c.y );
-    return { xMin : minx, yMin : miny, xMax : maxx, yMax : maxy, width : maxx-minx, height : maxy-miny };
-};
-
-Triangle.prototype.containsPoint = function( p ) {
-    //
-    // Point-in-Triangle test found at
-    //   http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
-    //
-    function pointIsInTriangle( px, py, p0x, p0y, p1x, p1y, p2x, p2y ) {
-	
-	var area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y);
-
-	var s = 1/(2*area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py);
-	var t = 1/(2*area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py);
-
-	return s > 0 && t > 0 && (1-s-t) > 0;
-    };
-
-    return pointIsInTriangle( p.x, p.y, this.a.x, this.a.y, this.b.x, this.b.y, this.c.x, this.c.y );
-};
-
-Triangle.prototype.toString = function() {
-    return '{ a : ' + this.a.toString () + ', b : ' + this.b.toString() + ', c : ' + this.c.toString() + '}';
-};
-// END Triangle
 
 
 window.Delaunay = function( pointList, config ) {
@@ -183,31 +29,10 @@ window.Delaunay = function( pointList, config ) {
 	var boxes;
 
 	function performPolygonTriangulation() {
-
-	    // return generateTriangles(); 
-	    return Triangulate( pointList ); // this.vertexSet );
+	    return Triangulate( pointList ); 
 	}
 
-    /*
-	//------------------------------------------------------------
-	// Vertex class
-	//------------------------------------------------------------
-	function Vertex( x, y ) {
-	    this.x = x;
-	    this.y = y;
 
-	    this.clone = function() {
-		return new Vertex(this.x,this.y);
-	    };
-	}
-        Vertex.prototype.eq = function( vertex ) {
-	    return
-	        Math.abs(this.x-vertex.x) < EPSILON
-		&&
-		Math.abs(this.y-vertex.y) < EPSILON;
-	}
-    // END Vertex
-    */
     
 
 
@@ -226,103 +51,6 @@ window.Delaunay = function( pointList, config ) {
 
 
 
-
-        // Currrently not in use
-        /*Triangle.prototype.getCentroid = function() {
-	    return new Vertex( (this.a.x + this.b.x + this.c.x),
-			       (this.a.y + this.b.y + this.x.y)
-			     );
-	};*/
-    
-        /*
-        Triangle.prototype.getCircumcircle = function() {
-	    if( !this.center || !this.radius ) 
-		this.calcCircumcircle();
-	    return { center : this.center.clone(), radius : this.radius };
-	};
-
-        Triangle.prototype.isAdjacent = function( tri ) {
-	    var a = this.a.eq(tri.a) || this.a.eq(tri.b) || this.a.eq(tri.c);
-	    var b = this.b.eq(tri.a) || this.b.eq(tri.b) || this.b.eq(tri.c);
-	    var c = this.c.eq(tri.a) || this.c.eq(tri.b) || this.c.eq(tri.c);
-
-	    return (a&&b) || (a&&c) || (b&&c);
-	};
-	    
-	Triangle.prototype.calcCircumcircle = function() 	{
-	    // From: http://www.exaflop.org/docs/cgafaq/cga1.html
-
-	    var A = this.b.x - this.a.x; 
-	    var B = this.b.y - this.a.y; 
-	    var C = this.c.x - this.a.x; 
-	    var D = this.c.y - this.a.y; 
-
-	    var E = A*(this.a.x + this.b.x) + B*(this.a.y + this.b.y); 
-	    var F = C*(this.a.x + this.c.x) + D*(this.a.y + this.c.y); 
-
-	    var G = 2.0*(A*(this.c.y - this.b.y)-B*(this.c.x - this.b.x)); 
-	    
-	    var dx, dy;
-	    
-	    if( Math.abs(G) < EPSILON ) {
-		// Collinear - find extremes and use the midpoint		
-		var bounds = this.bounds();
-		this.center = new Vertex( ( bounds.xMin + bounds.xMax ) / 2, ( bounds.yMin + bounds.yMax ) / 2 );
-
-		dx = this.center.x - bounds.xMin;
-		dy = this.center.y - bounds.yMin;
-	    } else {
-		var cx = (D*E - B*F) / G; 
-		var cy = (A*F - C*E) / G;
-
-		this.center = new Vertex( cx, cy );
-
-		dx = this.center.x - this.a.x;
-		dy = this.center.y - this.a.y;
-	    }
-
-	    this.radius_squared = dx * dx + dy * dy;
-	    this.radius = Math.sqrt( this.radius_squared );
-	}; // calcCircumcircle
-
-        Triangle.prototype.inCircumcircle = function( v ) {
-	    var dx = this.center.x - v.x;
-	    var dy = this.center.y - v.y;
-	    var dist_squared = dx * dx + dy * dy;
-
-	    return ( dist_squared <= this.radius_squared );
-	    
-	}; // inCircumcircle
-
-
-        Triangle.prototype.bounds = function() {
-	    function max3( a, b, c ) { return ( a >= b && a >= c ) ? a : ( b >= a && b >= c ) ? b : c; }
-	    function min3( a, b, c ) { return ( a <= b && a <= c ) ? a : ( b <= a && b <= c ) ? b : c; }
-	    var minx = min3( this.a.x, this.b.x, this.c.x );
-	    var miny = min3( this.a.y, this.b.y, this.c.y );
-	    var maxx = max3( this.a.x, this.b.x, this.c.x );
-	    var maxy = max3( this.a.y, this.b.y, this.c.y );
-	    return { xMin : minx, yMin : miny, xMax : maxx, yMax : maxy, width : maxx-minx, height : maxy-miny };
-	};
-
-        Triangle.prototype.containsPoint = function( p ) {
-	    //
-	    // Point-in-Triangle test found at
-	    //   http://stackoverflow.com/questions/2049582/how-to-determine-a-point-in-a-2d-triangle
-	    //
-	    function pointIsInTriangle( px, py, p0x, p0y, p1x, p1y, p2x, p2y ) {
-		
-		var area = 1/2*(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y);
-
-		var s = 1/(2*area)*(p0y*p2x - p0x*p2y + (p2y - p0y)*px + (p0x - p2x)*py);
-		var t = 1/(2*area)*(p0x*p1y - p0y*p1x + (p0y - p1y)*px + (p1x - p0x)*py);
-
-		return s > 0 && t > 0 && (1-s-t) > 0;
-	    };
-
-	    return pointIsInTriangle( p.x, p.y, this.a.x, this.a.y, this.b.x, this.b.y, this.c.x, this.c.y );
-        }
-    */
     
 	//------------------------------------------------------------
 	// Edge class
@@ -346,9 +74,7 @@ window.Delaunay = function( pointList, config ) {
         function Triangulate( vertices ) {
 	    var triangles = [];
 
-	    //
-	    // First, create a "supertriangle" that bounds all vertices
-	    //
+	    // First, create a "supertriangle" that bounds all vertices  
 	    var st = createBoundingTriangle( vertices );
 	    
 	    triangles.push( st );
@@ -364,9 +90,7 @@ window.Delaunay = function( pointList, config ) {
 		AddVertex( vertex, triangles );
 	    }
 
-	    //
 	    // Remove triangles that shared edges with "supertriangle"
-	    //
 	    for( i in triangles ) {
 		var triangle = triangles[i];
 
@@ -412,7 +136,6 @@ window.Delaunay = function( pointList, config ) {
 
 	// Internal: update triangulation with a vertex 
         function AddVertex( vertex, triangles )	{
-	    //console.log( 'Adding vertex ...' );
 	    var edges = [];
 	    
 	    // Remove triangles with circumcircles containing the vertex
@@ -471,9 +194,6 @@ window.Delaunay = function( pointList, config ) {
 
     // Do some pseudo exports
     this.triangulate = performPolygonTriangulation;
-    //console.log( this.triangulate );
 }; // END _constructor
 
 
-
-// console.log( delaunay );

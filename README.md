@@ -33,5 +33,9 @@ See the Voronoi diagram (still experimental)
 
 ![Voronoi diagram](voronoi-a-with-triangles-50pct.png "Voronoi Diagram A with triangles")
 
-Live demo at http://int2byte.de/public/image-triangulation/main.html
- 
+Live [demo here](http://int2byte.de/public/image-triangulation/main.html "Demo here")
+
+
+
+Credits to Joshua Bell who wrote the C++ code which was later ported to Javascript.
+[codeguru](http://www.codeguru.com/cpp/data/mfc_database/misc/article.php/c8901/)
