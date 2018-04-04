@@ -1,6 +1,8 @@
 /**
  * A simple image triangulation (color fill).
  *
+ * @requires Vertex, Triangle, delaunay
+ *
  * @author   Ikaros Kappler
  * @date     2017-07-31
  * @modified 2018-04-03 Added the voronoi-from-delaunay computation.
@@ -50,28 +52,6 @@
 
 	var canvasSize = { width : DEFAULT_CANVAS_WIDTH, height : DEFAULT_CANVAS_HEIGHT };
 
-	// A very basic point class.
-	// REPLACED BY Vertex CLASS.
-	/*
-	var Point = function(x,y) {
-	    this.x = x;
-	    this.y = y;
-
-	    this.clone = function() {
-		return new Point(this.x,this.y);
-	    };
-	    
-	    var _self = this;
-	    this.scale = function( factor, center ) {
-		if( !center || typeof center === "undefined" )
-		    ; //center = Point.ORIGIN;
-		_self.x = center.x + (_self.x-center.x)*factor;
-		_self.y = center.y + (_self.y-center.y)*factor;
-		return this;
-	    };
-	};
-	Point.ORIGIN = new Point(0,0);
-	*/
 	
 	// A list of point-velocity-pairs.
 	var pointList  = [];
@@ -216,7 +196,6 @@
 	    var count = 1;
 	    var x     = bounds.xMin;
 	    var y     = bounds.yMin;
-	    // console.log('image buffer size for triangle: ' + n );
 	    for( var i = 4; i < n; i += 4 ) {
 		if( !tri.containsPoint({ x : x, y : y }) || x < 0 || x >= canvasSize.width || y < 0 || y >= canvasSize.height )
 		    continue;
@@ -242,13 +221,7 @@
 		rgba.r = bgColor.r;
 		rgba.g = bgColor.g;
 		rgba.b = bgColor.b;
-		//console.log('[getAverageColorInTriangle] using image.alpha ('+rgba.a+') and background.color ('+bgColor.cssRGB()+')' );
 	    }
-	    //console.log( 'final triangle alpha: ' + Color.makeRGB( rgba.r, rgba.g, rgba.b, rgba.a ).a );
-	    //var finalColor = Color.makeRGB( rgba.r, rgba.g, rgba.b );
-	    //finalColor.a = rgba.a;
-	    //console.log( 'Making CSS color from (RGBA)=' + finalColor.r +', ' + finalColor.g + ', ' + finalColor.b + ', ' + finalColor.a );
-	    //return finalColor.cssRGBA(); // randomGreyscale().cssRGB();
 	    return Color.makeRGB( rgba.r, rgba.g, rgba.b, rgba.a ).cssRGBA(); 
 	};
 
@@ -276,7 +249,6 @@
 		    } else {
 			// Pick color from inside triangle
 			t.color = getAverageColorInTriangle( imageBuffer, t );
-			//console.log( 'Fetched color for triangle: ' + t.color );
 		    }
 		}
 		drawTriangle( t, t.color );
@@ -399,7 +371,7 @@
 		    var tri = triangles[i];
 		    var circumCircle = tri.getCircumcircle(); // { center:Vector, radius:Number }
 		    var scaleFactor = (circumCircle.radius+0.1) / circumCircle.radius;
-		    console.log( 'scaleFactor=' + scaleFactor + ', center=' + JSON.stringify(circumCircle.center) + ', radius=' + circumCircle.radius );
+		    //console.log( 'scaleFactor=' + scaleFactor + ', center=' + JSON.stringify(circumCircle.center) + ', radius=' + circumCircle.radius );
 		    
 		    tri.a = tri.a.clone().scale( scaleFactor, circumCircle.center );
 		    tri.b = tri.b.clone().scale( scaleFactor, circumCircle.center );
@@ -409,35 +381,6 @@
 	    
 	    redraw();
 	};
-
-
-	// +---------------------------------------------------------------------------------
-	// | Convert the triangle set to the Voronoi diagram.
-	// +-------------------------------
-	/*
-	var makeVoronoiDiagram = function() {
-
-	    voronoiDiagram = [];	    
-	    for( var t in triangles ) {
-		var tri = triangles[t];
-		// Find adjacent triangles for first point
-		var adjacentSubset = []; 
-		for( var u in triangles ) {
-		    if( t == u )
-			continue;
-		    //console.log( "isAdjacent=" + tri.isAdjacent(triangles[u]) + ', tri=' + tri.toString() + ', triangles['+u+']=' + triangles[u].toString() );
-		    if( tri.isAdjacent(triangles[u]) )
-			adjacentSubset.push( triangles[u] );
-		}
-		console.log( "[makeVoronoiDiagram] adjacent=" + JSON.stringify(adjacentSubset) );
-		var path = subsetToPath(adjacentSubset);
-		voronoiDiagram.push( path );
-	    }
-
-	    console.log( "[makeVoronoiDiagram] " + JSON.stringify(voronoiDiagram) );
-	};
-	*/
-
 	
 	// +---------------------------------------------------------------------------------
 	// | Convert the triangle set to the Voronoi diagram.
