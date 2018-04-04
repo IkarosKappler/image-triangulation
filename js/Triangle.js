@@ -25,13 +25,13 @@ function Triangle( a, b, c )	{
     
 }
 
-/* // Not in use
+// Not in use
 Triangle.prototype.getCentroid = function() {
   return new Vertex( (this.a.x + this.b.x + this.c.x)/3,
 		     (this.a.y + this.b.y + this.c.y)/3
 		   );
 };
-*/
+
 
 Triangle.prototype.getCircumcircle = function() {
     if( !this.center || !this.radius ) 

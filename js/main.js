@@ -29,22 +29,23 @@
 	    triangulate        : false,
 	    backgroundColor    : '#ffffff',
 	    loadImage          : function() { $('input#file').data('type','image-upload').trigger('click'); },
-	    clear              : function() { pointList = []; triangles = []; redraw(); },
-	    randomize          : function() { randomPoints(true,false,false); if( config.triangulate ) triangulate(); },
-	    fullCover          : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
-	    fullCoverExtended  : function() { randomPoints(true,true,false); if( config.triangulate ) triangulate(); },
+	    clear              : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
+	    randomize          : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
+	    fullCover          : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild(); },
+	    fullCoverExtended  : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild() },
 	    exportSVG          : function() { exportSVG(); },
 	    exportPointset     : function() { exportPointset(); },
 	    importPointset     : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
 	};
 	
-	var $canvas          = $( 'canvas#my-canvas' );
-	var ctx              = $canvas[0].getContext('2d');
-	var activePointIndex = 1;
-	var image            = null; // An image.
-	var imageBuffer      = null; // A canvas to read the pixel data from.
-	var triangles        = [];
-	var voronoiDiagram   = [];
+	var $canvas             = $( 'canvas#my-canvas' );
+	var ctx                 = $canvas[0].getContext('2d');
+	var activePointIndex    = 1;
+	var image               = null; // An image.
+	var imageBuffer         = null; // A canvas to read the pixel data from.
+	var triangles           = [];
+	var trianglesPointCount = -1;    // Keep track of the number of points when the triangles were generated.
+	var voronoiDiagram      = [];
 	
 	var getFloat = function(selector) {
 	    return parseFloat( $(selector).val() );
@@ -123,7 +124,7 @@
 	// | Generates a random color object with r=g=b.
 	// +-------------------------------
 	var randomGreyscale = function() {
-	    var v = randomInt(255);
+	    var v = 32 + randomInt(255-32);
 	    return Color.makeRGB( v, v, v );
 	};
 
@@ -264,19 +265,32 @@
 
 	    // Draw voronoi diagram?
 	    if( config.makeVoronoiDiagram ) {
-		for( v in voronoiDiagram ) {
-		    var cell = voronoiDiagram[v];
-		    ctx.beginPath();
-		    var centroid = cell[ 0 ].getCircumcircle().center;
-		    ctx.moveTo( centroid.x, centroid.y );
-		    for( var t = 1; t <= cell.length; t++ ) {
-			var centroid = cell[ t%cell.length ].getCircumcircle().center;
-			ctx.lineTo( centroid.x, centroid.y );
-		    }
-		    ctx.strokeStyle = 'green';
-		    ctx.lineWidth = 3;
-		    ctx.stroke();
+		drawVoronoiDiagram();
+	    }
+	};
+
+	
+	// +---------------------------------------------------------------------------------
+	// | Draw the stored voronoi diagram.
+	// +-------------------------------	
+	var drawVoronoiDiagram = function() {
+	    for( v in voronoiDiagram ) {
+		var cell = voronoiDiagram[v];
+		ctx.beginPath();
+		var centroid = cell[ 0 ].getCircumcircle().center;
+		ctx.moveTo( centroid.x, centroid.y );
+		for( var t = 1; t < cell.length; t++ ) {
+		    var centroid = cell[ t ].getCircumcircle().center;
+		    ctx.lineTo( centroid.x, centroid.y );
 		}
+		// Close cell?
+		// Only cells inside the triangulation should be closed. Border
+		// cell are incomplete.
+		if( cell[0].isAdjacent( cell[ cell.length-1] ) )
+		    ctx.closePath();
+		ctx.strokeStyle = 'green';
+		ctx.lineWidth = 3;
+		ctx.stroke();
 	    }
 	};
 
@@ -284,13 +298,11 @@
 	// | Handle a dropped image: initially draw the image (to fill the background).
 	// +-------------------------------
 	var handleImage = function(e) {
-
 	    var validImageTypes = "image/gif,image/jpeg,image/jpg,image/gif,image/png";
 	    if( validImageTypes.indexOf(e.target.files[0].type) == -1 ) {
 		if( !window.confirm('This seems not to be an image ('+e.target.files[0].type+'). Continue?') )
 		    return;
-	    }
-	    
+	    }	    
 	    var reader = new FileReader();
 	    reader.onload = function(event){
 		image = new Image();
@@ -339,7 +351,7 @@
 	
 	// +---------------------------------------------------------------------------------
 	// | Decide which file type should be handled:
-	// |  - image for the backgounrd or
+	// |  - image for the background or
 	// |  - JSON for the point set)
 	// +-------------------------------
 	var handleFile = function(e) {
@@ -356,6 +368,18 @@
 	}
 	$( 'input#file' ).change( handleFile );
 
+
+	// +---------------------------------------------------------------------------------
+	// | The rebuild function just evaluates the input and
+	// |  - triangulate the point set?
+	// |  - build the voronoi diagram?
+	// +-------------------------------
+	var rebuild = function() {
+	    // Only re-triangulate if the point list changed.
+	    if( (config.triangulate || config.makeVoronoiDiagram) && trianglesPointCount != pointList.length ) triangulate();
+	    if( config.makeVoronoiDiagram ) makeVoronoiDiagram();
+	    redraw();
+	};
 
 	// +---------------------------------------------------------------------------------
 	// | Make the triangulation (Delaunay).
@@ -378,9 +402,12 @@
 		    tri.c = tri.c.clone().scale( scaleFactor, circumCircle.center );
 		}
 	    }
-	    
+
+	    trianglesPointCount = pointList.length;
+	    voronoiDiagram = [];
 	    redraw();
 	};
+
 	
 	// +---------------------------------------------------------------------------------
 	// | Convert the triangle set to the Voronoi diagram.
@@ -392,49 +419,80 @@
 		// Find adjacent triangles for first point
 		var adjacentSubset = []; 
 		for( var t in triangles ) {
-		    //console.log( "isAdjacent=" + tri.isAdjacent(triangles[u]) + ', tri=' + tri.toString() + ', triangles['+u+']=' + triangles[u].toString() );
 		    if( triangles[t].a.equals(point) || triangles[t].b.equals(point) || triangles[t].c.equals(point) )
 			adjacentSubset.push( triangles[t] );
 		}
-		console.log( "[makeVoronoiDiagram] adjacent=" + JSON.stringify(adjacentSubset) );
+		//console.log( "[makeVoronoiDiagram] adjacent=" + JSON.stringify(adjacentSubset) );
 		var path = subsetToPath(adjacentSubset);
 		voronoiDiagram.push( path );
 	    }
-	    console.log( "[makeVoronoiDiagram] " + JSON.stringify(voronoiDiagram) );
+	    //console.log( "[makeVoronoiDiagram] " + JSON.stringify(voronoiDiagram) );
 	};
 
 
-	// Re-order a tiangle subset so the triangle define a single path.
-	var subsetToPath = function( triangleSet ) {
+	// +---------------------------------------------------------------------------------
+	// | Re-order a tiangle subset so the triangle define a single path.
+	// |
+	// | It is required that all passed triangles are connected to a
+	// | path. Otherwise this function will RAISE AN EXCEPTION.
+	// |
+	// | The function has a failsafe recursive call for the case the first
+	// | element in the array is inside the path (no border element).
+	// +-------------------------------
+	var subsetToPath = function( triangleSet, startPosition, tryOnce ) {
 	    if( triangleSet.length == 0 )
 		return [];
+
+	    if( typeof startPosition === 'undefined' )
+		startPosition = 0;
 	    
-	    var t       = 0;
+	    var t       = startPosition;
 	    var result  = [ triangleSet[t] ];
 	    var visited = [ t ];
-	    //for( var i = 0; i < triangleSet.length; i++ ) {
-	    var i = 1; 
-	    while( visited.length < triangleSet.length && i < triangleSet.length ) {
-		if( visited.indexOf(i) != -1 ) {
-		    i++
-		    continue;
-		}
-		if( t != i && triangleSet[t].isAdjacent(triangleSet[i]) ) {
-		    result.push(triangleSet[i]);
-		    visited.push(i);
-		    t = i;
-		    i = 1;
+	    var i = 0;
+	    while( result.length < triangleSet.length && i < triangleSet.length ) {
+		var u = (startPosition+i)%triangleSet.length;
+		//if( tryOnce )
+		//    console.log( startPosition, t, u, triangleSet[t].isAdjacent(triangleSet[u]) );
+		if( t != u && visited.indexOf(u) == -1 && triangleSet[t].isAdjacent(triangleSet[u]) ) {
+		    result.push(triangleSet[u]);
+		    visited.push(u);
+		    t = u;
+		    i = 0;
 		} else {
 		    i++;
 		}
 	    }
-	    return result;
+	    // If not all triangles were used the passed set is NOT CIRCULAR.
+	    // But in this case the triangle at position t is at one end of the path :)
+	    // -> Restart with t.
+	    if( result.length < triangleSet.length ) {
+		if( tryOnce ) {
+		    /*
+		    for( var i in triangleSet ) {
+			drawTriangle( triangleSet[i], 'red' );
+			ctx.fillStyle = 'black';
+			ctx.fillText( '' + i, triangleSet[i].getCentroid().x, triangleSet[i].getCentroid().y ); 
+		    }
+		    drawTriangle( triangleSet[t%triangleSet.length], 'green' );
+		    ctx.fillStyle = 'black';
+		    ctx.fillText( '' + t, triangleSet[t%triangleSet.length].getCentroid().x, triangleSet[t%triangleSet.length].getCentroid().y );
+		    */
+		    throw "Error: this triangle set is not connected: " + JSON.stringify(triangleSet);
+		} else {
+		    //console.log( 'triangle inside path found. rearrange.' );
+		    return subsetToPath( triangleSet, t, true );
+		}
+	    } else {	    
+		return result;
+	    }
 	};
+
 	
 	// +---------------------------------------------------------------------------------
 	// | Add n random points.
 	// +-------------------------------
-	var randomPoints = function( clear, fullCover ) {
+	var randomPoints = function( clear, fullCover, doRedraw ) {
 	    if( clear )
 		pointList = [];
 	    // Generate random points on image border?
@@ -469,7 +527,8 @@
 	    for( var i = pointList.length; i < config.pointCount; i++ ) {
 		addRandomPoint();
 	    }
-	    redraw();
+	    if( doRedraw )
+		redraw();
 	};
 
 	// +---------------------------------------------------------------------------------
@@ -477,7 +536,7 @@
 	// +-------------------------------
 	var updatePointCount = function() {
 	    if( config.pointCount > pointList.length )
-		randomPoints(false); // Do not clear
+		randomPoints(false,false,true); // Do not clear ; no full cover ; do redraw
 	    else if( config.pointCount < pointList.length ) {
 		// console.log( 'remove, pointList.length=' + pointList.length + ', config.pointCount=' + config.pointCount );
 		// Remove n-m points
@@ -571,13 +630,13 @@
 	    var gui = new dat.gui.GUI();
 	    gui.remember(config);
 	    gui.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
-	    gui.add(config, 'triangulate').onChange( function() { if( (config.triangulate || config.makeVoronoiDiagram) ) triangulate(); if( config.makeVoronoiDiagram ) makeVoronoiDiagram(); redraw(); } ).title("Triangulate the point set?");
-	    gui.add(config, 'makeVoronoiDiagram').onChange( function() { if( (config.triangulate || config.makeVoronoiDiagram) && triangles.length == 0 ) triangulate(); if( config.makeVoronoiDiagram ) makeVoronoiDiagram(); redraw(); } ).title("(Experimental) Make voronoi diagram from the triangle set.");
+	    gui.add(config, 'triangulate').onChange( rebuild ).title("Triangulate the point set?");
+	    gui.add(config, 'makeVoronoiDiagram').onChange( rebuild ).title("(Experimental) Make voronoi diagram from the triangle set.");
 	    gui.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled.");
 	    gui.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
 	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
-	    gui.add(config, 'optimizeGaps').onChange( function() { if(config.triangulate) triangulate(); redraw(); } ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
+	    gui.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
 	    gui.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
 	    gui.add(config, 'clear').name('Clear all').title("Clear all.");
@@ -634,7 +693,7 @@
 	} );
 
 	// Init
-	randomPoints(true); // clear
+	randomPoints(true,false,true); // clear ; no full cover ; do redraw
 	
     } ); // END document.ready
     
