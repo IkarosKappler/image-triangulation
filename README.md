@@ -10,9 +10,10 @@ Feature list
  * Export SVG images.
  * Export vertex list (JSON file).
  * Import vertext list (JSON file).
-
  * Since version 1.0.1 there is also a Voronoi-from-Delaunay computation.
 
+Todos:
+ * Voronoi cell export
 
 
 ![A simple triangulation with 25 points](screenshots/triangulation-a.png)
