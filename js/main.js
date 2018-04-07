@@ -408,86 +408,14 @@
 	    redraw();
 	};
 
-	
+
 	// +---------------------------------------------------------------------------------
 	// | Convert the triangle set to the Voronoi diagram.
 	// +-------------------------------
 	var makeVoronoiDiagram = function() {
-	    voronoiDiagram = [];	    
-	    for( var p in pointList ) {
-		var point = pointList[p];
-		// Find adjacent triangles for first point
-		var adjacentSubset = []; 
-		for( var t in triangles ) {
-		    if( triangles[t].a.equals(point) || triangles[t].b.equals(point) || triangles[t].c.equals(point) )
-			adjacentSubset.push( triangles[t] );
-		}
-		//console.log( "[makeVoronoiDiagram] adjacent=" + JSON.stringify(adjacentSubset) );
-		var path = subsetToPath(adjacentSubset);
-		voronoiDiagram.push( path );
-	    }
-	    //console.log( "[makeVoronoiDiagram] " + JSON.stringify(voronoiDiagram) );
-	};
-
-
-	// +---------------------------------------------------------------------------------
-	// | Re-order a tiangle subset so the triangle define a single path.
-	// |
-	// | It is required that all passed triangles are connected to a
-	// | path. Otherwise this function will RAISE AN EXCEPTION.
-	// |
-	// | The function has a failsafe recursive call for the case the first
-	// | element in the array is inside the path (no border element).
-	// +-------------------------------
-	var subsetToPath = function( triangleSet, startPosition, tryOnce ) {
-	    if( triangleSet.length == 0 )
-		return [];
-
-	    if( typeof startPosition === 'undefined' )
-		startPosition = 0;
-	    
-	    var t       = startPosition;
-	    var result  = [ triangleSet[t] ];
-	    var visited = [ t ];
-	    var i = 0;
-	    while( result.length < triangleSet.length && i < triangleSet.length ) {
-		var u = (startPosition+i)%triangleSet.length;
-		//if( tryOnce )
-		//    console.log( startPosition, t, u, triangleSet[t].isAdjacent(triangleSet[u]) );
-		if( t != u && visited.indexOf(u) == -1 && triangleSet[t].isAdjacent(triangleSet[u]) ) {
-		    result.push(triangleSet[u]);
-		    visited.push(u);
-		    t = u;
-		    i = 0;
-		} else {
-		    i++;
-		}
-	    }
-	    // If not all triangles were used the passed set is NOT CIRCULAR.
-	    // But in this case the triangle at position t is at one end of the path :)
-	    // -> Restart with t.
-	    if( result.length < triangleSet.length ) {
-		if( tryOnce ) {
-		    /*
-		    for( var i in triangleSet ) {
-			drawTriangle( triangleSet[i], 'red' );
-			ctx.fillStyle = 'black';
-			ctx.fillText( '' + i, triangleSet[i].getCentroid().x, triangleSet[i].getCentroid().y ); 
-		    }
-		    drawTriangle( triangleSet[t%triangleSet.length], 'green' );
-		    ctx.fillStyle = 'black';
-		    ctx.fillText( '' + t, triangleSet[t%triangleSet.length].getCentroid().x, triangleSet[t%triangleSet.length].getCentroid().y );
-		    */
-		    throw "Error: this triangle set is not connected: " + JSON.stringify(triangleSet);
-		} else {
-		    //console.log( 'triangle inside path found. rearrange.' );
-		    return subsetToPath( triangleSet, t, true );
-		}
-	    } else {	    
-		return result;
-	    }
-	};
-
+	    voronoiDiagram = new delaunay2voronoi(pointList,triangles).build();
+	    redraw();
+	}
 	
 	// +---------------------------------------------------------------------------------
 	// | Add n random points.
