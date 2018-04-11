@@ -12,10 +12,14 @@ Feature list
  * Import vertext list (JSON file).
  * Since version 1.0.1 there is also a Voronoi-from-Delaunay computation.
 
-Todos:
+## Changelog
+ * v1.0.1 Added the option to draw circumcircles. 
+
+## Todos:
  * Voronoi cell export
 
 
+## Screenshots
 ![A simple triangulation with 25 points](screenshots/triangulation-a.png)
 
 

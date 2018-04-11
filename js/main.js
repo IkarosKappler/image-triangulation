@@ -6,7 +6,8 @@
  * @author   Ikaros Kappler
  * @date     2017-07-31
  * @modified 2018-04-03 Added the voronoi-from-delaunay computation.
- * @version  1.0.1
+ * @modified 2018-04-11 Added the option to draw circumcircles.
+ * @version  1.0.2
  **/
 
 
@@ -23,6 +24,7 @@
 	    fillAlphaOnly      : false,
 	    drawPoints         : true,
 	    drawEdges          : false,
+	    drawCircumCircles  : true,
 	    optimizeGaps       : false,
 	    pointCount         : 25,
 	    fullSize           : true,
@@ -255,6 +257,9 @@
 		drawTriangle( t, t.color );
 	    }
 
+	    if( config.drawCircumCircles )
+		drawCircumCircles();
+
 	    // Draw points?
 	    if( config.drawPoints ) {
 		for( var i in pointList ) {
@@ -262,7 +267,7 @@
 		    drawPoint( p, 'blue' );
 		}
 	    }
-
+	    
 	    // Draw voronoi diagram?
 	    if( config.makeVoronoiDiagram ) {
 		drawVoronoiDiagram();
@@ -277,20 +282,34 @@
 	    for( v in voronoiDiagram ) {
 		var cell = voronoiDiagram[v];
 		ctx.beginPath();
-		var centroid = cell[ 0 ].getCircumcircle().center;
+		var centroid = cell.triangles[ 0 ].getCircumcircle().center;
 		ctx.moveTo( centroid.x, centroid.y );
-		for( var t = 1; t < cell.length; t++ ) {
-		    var centroid = cell[ t ].getCircumcircle().center;
+		for( var t = 1; t < cell.triangles.length; t++ ) {
+		    var centroid = cell.triangles[ t ].getCircumcircle().center;
 		    ctx.lineTo( centroid.x, centroid.y );
 		}
 		// Close cell?
 		// Only cells inside the triangulation should be closed. Border
 		// cell are incomplete.
-		if( cell[0].isAdjacent( cell[ cell.length-1] ) )
+		if( !cell.isOpen() ) // ( cell[0].isAdjacent( cell[ cell.length-1] ) )
 		    ctx.closePath();
 		ctx.strokeStyle = 'green';
 		ctx.lineWidth = 3;
 		ctx.stroke();
+	    }
+	};
+
+	// +---------------------------------------------------------------------------------
+	// | Draw the circumcircles of all triangles.
+	// +-------------------------------
+	var drawCircumCircles = function() {
+	    ctx.strokeStyle = 'white';
+	    ctx.lineWidth = 0.5;
+	    for( var t in triangles ) {
+		var cc = triangles[t].getCircumcircle();
+		ctx.beginPath();
+		ctx.arc( cc.center.x, cc.center.y, cc.radius, 0, Math.PI*2 );
+		ctx.stroke();		
 	    }
 	};
 
@@ -466,7 +485,6 @@
 	    if( config.pointCount > pointList.length )
 		randomPoints(false,false,true); // Do not clear ; no full cover ; do redraw
 	    else if( config.pointCount < pointList.length ) {
-		// console.log( 'remove, pointList.length=' + pointList.length + ', config.pointCount=' + config.pointCount );
 		// Remove n-m points
 		pointList = pointList.slice( 0, config.pointCount );
 		redraw();
@@ -520,6 +538,16 @@
 		buffer.push( '   <polygon points="' + t.a.x + ',' + t.a.y + ' '+t.b.x+','+t.b.y+' '+t.c.x+','+t.c.y+'" style="fill:'+color+(config.drawEdges?';stroke:purple;stroke-width:1':'')+'" />' );
 	    }
 
+	    // Draw circumcircles?
+	    for( var t in triangles ) {
+		// console.log( t );
+		var cc = triangles[t].getCircumcircle();
+		//ctx.beginPath();
+		//ctx.arc( cc.center.x, cc.center.y, cc.radius, 0, Math.PI*2 );
+		//ctx.stroke();
+		buffer.push( '   <circle cx="' + cc.center.x + '" cy="' + cc.center.y + '" r="' + cc.radius + '" style="stroke: white; stroke-width 0.5; fill : none;" class="circum" />' );
+	    }
+	    
 	    // Draw points?
 	    if( config.drawPoints ) {
 		for( var i in pointList ) {
@@ -527,6 +555,15 @@
 		    buffer.push( '   <circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="blue" />' );
 		}
 	    }
+
+	    // Draw voronoi?
+	    for( v in voronoiDiagram ) {
+		var cell = voronoiDiagram[v];
+		
+		buffer.push( '   <polygon points="' + cell.toPathSVGString() +'" style="fill: none; stroke:green;stroke-width:2px;" />' );
+		
+	    }
+	    	    
 	    buffer.push( '</svg>' );
 	    
 	    var svgCode = buffer.join("\n");
@@ -564,6 +601,7 @@
 	    gui.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
 	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
+	    gui.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles be drawn.");
 	    gui.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
 	    gui.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");

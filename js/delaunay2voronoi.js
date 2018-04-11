@@ -1,9 +1,12 @@
 /**
  * Create the voronoi diagram from the given delaunay triangulation (they are dual graphs).
  *
- * @author  Ikaros Kappler
- * @date    2018-04-07
- * @version 1.0.0
+ * @requires VoronoiCell, Triangle
+ *
+ * @author   Ikaros Kappler
+ * @date     2018-04-07
+ * @modified 2018-04-11 Using VoronoiCells now (was array before).
+ * @version  1.0.1
  **/
 
 (function(context) {
@@ -24,11 +27,9 @@
 		    if( triangles[t].a.equals(point) || triangles[t].b.equals(point) || triangles[t].c.equals(point) )
 			adjacentSubset.push( triangles[t] );
 		}
-		//console.log( "[makeVoronoiDiagram] adjacent=" + JSON.stringify(adjacentSubset) );
 		var path = subsetToPath(adjacentSubset);
-		voronoiDiagram.push( path );
+		voronoiDiagram.push( new VoronoiCell(path) );
 	    }
-	    //console.log( "[makeVoronoiDiagram] " + JSON.stringify(voronoiDiagram) );
 	    return voronoiDiagram;
 	};
 
