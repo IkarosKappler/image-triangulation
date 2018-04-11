@@ -19,25 +19,26 @@
     $( document ).ready( function() {
 
 	var config = {
-	    fillTriangles      : true,
-	    makeVoronoiDiagram : false,
-	    fillAlphaOnly      : false,
-	    drawPoints         : true,
-	    drawEdges          : false,
-	    drawCircumCircles  : true,
-	    optimizeGaps       : false,
-	    pointCount         : 25,
-	    fullSize           : true,
-	    triangulate        : false,
-	    backgroundColor    : '#ffffff',
-	    loadImage          : function() { $('input#file').data('type','image-upload').trigger('click'); },
-	    clear              : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
-	    randomize          : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
-	    fullCover          : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild(); },
-	    fullCoverExtended  : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild() },
-	    exportSVG          : function() { exportSVG(); },
-	    exportPointset     : function() { exportPointset(); },
-	    importPointset     : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
+	    fillTriangles       : true,
+	    makeVoronoiDiagram  : false,
+	    fillAlphaOnly       : false,
+	    drawPoints          : true,
+	    drawEdges           : false,
+	    drawCircumCircles   : true,
+	    drawQuadraticCurves : false,
+	    optimizeGaps        : false,
+	    pointCount          : 25,
+	    fullSize            : true,
+	    triangulate         : false,
+	    backgroundColor     : '#ffffff',
+	    loadImage           : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    clear               : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
+	    randomize           : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
+	    fullCover           : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild(); },
+	    fullCoverExtended   : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild() },
+	    exportSVG           : function() { exportSVG(); },
+	    exportPointset      : function() { exportPointset(); },
+	    importPointset      : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
 	};
 	
 	var $canvas             = $( 'canvas#my-canvas' );
@@ -260,6 +261,9 @@
 	    if( config.drawCircumCircles )
 		drawCircumCircles();
 
+	    if( config.drawQuadraticCurves )
+		drawQuadraticBezierVoronoi();
+	    
 	    // Draw points?
 	    if( config.drawPoints ) {
 		for( var i in pointList ) {
@@ -272,6 +276,8 @@
 	    if( config.makeVoronoiDiagram ) {
 		drawVoronoiDiagram();
 	    }
+
+	    //drawBezierVoronoi();
 	};
 
 	
@@ -309,10 +315,45 @@
 		var cc = triangles[t].getCircumcircle();
 		ctx.beginPath();
 		ctx.arc( cc.center.x, cc.center.y, cc.radius, 0, Math.PI*2 );
+		ctx.closePath();
 		ctx.stroke();		
 	    }
 	};
 
+	var drawQuadraticBezierVoronoi = function() {
+	    for( var c in voronoiDiagram ) {
+		var cell = voronoiDiagram[c];
+		if( cell.isOpen() || cell.triangles.length < 3 )
+		    continue;
+
+		ctx.beginPath();
+		var cc0 = cell.triangles[0].getCircumcircle().center;
+		var cc1 = cell.triangles[1].getCircumcircle().center;
+		var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
+					     cc0.y + (cc1.y-cc0.y)/2 );
+		ctx.moveTo( edgeCenter.x, edgeCenter.y );
+
+		for( var t = 1; t <= cell.triangles.length; t++ ) {
+
+		    cc0 = cell.triangles[ t%cell.triangles.length ].getCircumcircle().center;
+		    cc1 = cell.triangles[ (t+1)%cell.triangles.length ].getCircumcircle().center;
+		    var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
+						 cc0.y + (cc1.y-cc0.y)/2 );
+		    
+		    ctx.quadraticCurveTo( cc0.x, cc0.y, edgeCenter.x, edgeCenter.y );
+		    
+		    cc0 = cc1;
+		}
+
+		ctx.closePath();
+		ctx.strokeStyle = 'red';
+		ctx.fillStyle = 'rgba(0,128,255,0.5)'; // '#0088ff';
+		ctx.stroke();
+		ctx.fill();
+	    }
+	    
+	}
+	
 	// +---------------------------------------------------------------------------------
 	// | Handle a dropped image: initially draw the image (to fill the background).
 	// +-------------------------------
@@ -558,10 +599,8 @@
 
 	    // Draw voronoi?
 	    for( v in voronoiDiagram ) {
-		var cell = voronoiDiagram[v];
-		
+		var cell = voronoiDiagram[v];		
 		buffer.push( '   <polygon points="' + cell.toPathSVGString() +'" style="fill: none; stroke:green;stroke-width:2px;" />' );
-		
 	    }
 	    	    
 	    buffer.push( '</svg>' );
@@ -601,7 +640,8 @@
 	    gui.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
 	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
-	    gui.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles be drawn.");
+	    gui.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles will be drawn.");
+	    gui.add(config, 'drawQuadraticCurves').onChange( redraw ).title("If checked the Voronoi's quadratic curves will be drawn.");
 	    gui.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
 	    gui.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
