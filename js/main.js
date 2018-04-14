@@ -1,13 +1,13 @@
 /**
- * A simple image triangulation (color fill).
+ * A simple 2d point set and image triangulation (color fill).
  *
- * @requires Vertex, Triangle, delaunay
+ * @requires Vertex, Triangle, Polygon, VoronoiCell, delaunay, delaunay2voronoi
  *
  * @author   Ikaros Kappler
  * @date     2017-07-31
  * @modified 2018-04-03 Added the voronoi-from-delaunay computation.
  * @modified 2018-04-11 Added the option to draw circumcircles.
- * @version  1.0.2
+ * @version  1.0.3
  **/
 
 
@@ -24,12 +24,13 @@
 	    fillAlphaOnly       : false,
 	    drawPoints          : true,
 	    drawEdges           : false,
-	    drawCircumCircles   : true,
+	    drawCircumCircles   : false,
 	    drawQuadraticCurves : false,
 	    optimizeGaps        : false,
 	    pointCount          : 25,
 	    fullSize            : true,
-	    triangulate         : false,
+	    triangulate         : true,
+	    autoUpdateOnChange  : true,
 	    backgroundColor     : '#ffffff',
 	    loadImage           : function() { $('input#file').data('type','image-upload').trigger('click'); },
 	    clear               : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
@@ -276,8 +277,6 @@
 	    if( config.makeVoronoiDiagram ) {
 		drawVoronoiDiagram();
 	    }
-
-	    //drawBezierVoronoi();
 	};
 
 	
@@ -320,13 +319,18 @@
 	    }
 	};
 
+	
+	// +---------------------------------------------------------------------------------
+	// | Draw the voronoi cells as quadratic bezier curves.
+	// +-------------------------------
 	var drawQuadraticBezierVoronoi = function() {
 	    for( var c in voronoiDiagram ) {
 		var cell = voronoiDiagram[c];
 		if( cell.isOpen() || cell.triangles.length < 3 )
 		    continue;
-
+		
 		ctx.beginPath();
+		/*
 		var cc0 = cell.triangles[0].getCircumcircle().center;
 		var cc1 = cell.triangles[1].getCircumcircle().center;
 		var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
@@ -344,10 +348,18 @@
 		    
 		    cc0 = cc1;
 		}
+		*/
 
-		ctx.closePath();
+		var qbezier = new Polygon(cell.toPathArray,cell.isOpen()).toQuadraticBezierData();
+		ctx.moveTo( qbezier[0].x, qbezier[0].y );
+		for( var t = 1; t < qbezier.length; t+=2 ) {
+		    ctx.quadraticCurveTo( qbezier[t].x, qbezier[t].y, qbezier[t+1].x, qbezier[t+1].y );
+		}
+
+		if( !cell.isOpen() )
+		    ctx.closePath();
 		ctx.strokeStyle = 'red';
-		ctx.fillStyle = 'rgba(0,128,255,0.5)'; // '#0088ff';
+		ctx.fillStyle = 'rgba(0,128,255,0.5)';
 		ctx.stroke();
 		ctx.fill();
 	    }
@@ -441,6 +453,7 @@
 	    redraw();
 	};
 
+	
 	// +---------------------------------------------------------------------------------
 	// | Make the triangulation (Delaunay).
 	// +-------------------------------
@@ -642,6 +655,7 @@
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
 	    gui.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles will be drawn.");
 	    gui.add(config, 'drawQuadraticCurves').onChange( redraw ).title("If checked the Voronoi's quadratic curves will be drawn.");
+	    gui.add(config, 'autoUpdateOnChange').onChange( rebuild ).title("Update when points are added.");
 	    gui.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
 	    gui.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
@@ -660,7 +674,8 @@
 	// +-------------------------------
 	function handleTap(x,y) {
 	    pointList.push( new Vertex(x,y) );
-	    redraw();
+	    if( config.autoUpdateOnChange ) rebuild();
+	    else    		            redraw();
 	}
 
 	var canvasDragged = false;

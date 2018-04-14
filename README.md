@@ -13,6 +13,8 @@ Feature list
  * Since version 1.0.1 there is also a Voronoi-from-Delaunay computation.
 
 ## Changelog
+ * v1.0.3 Added the Polygon class.
+ * v1.0.2 Minor code changes.
  * v1.0.1 Added the option to draw circumcircles. 
 
 ## Todos:

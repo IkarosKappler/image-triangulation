@@ -40,9 +40,9 @@
     // | "x0,y0 x1,y1 x2,y2 ..." 
     // +-------------------------------
     context.VoronoiCell.prototype.toPathSVGString = function() {
-	if( this.triangles.length == 0 )
+	/* if( this.triangles.length == 0 )
 	    return "";
-	
+
 	var arr = [];
 	for( var t = 0; t < this.triangles.length; t++ ) {
 	    var cc = this.triangles[t].getCircumcircle();
@@ -59,7 +59,35 @@
 	    arr.push( cc.center.y );
 	}
 	
-	return arr.join(' ');
+	return arr.join(' '); */
+
+	var arr = this.toPathArray();
+	return arr.map( function(vert) { return ''+vert.x+','+ver.y; } ).join(' '); 
     };
+
+    
+    // +---------------------------------------------------------------------------------
+    // | Convert the voronoi cell path data to an array.
+    // |
+    // | [vertex0, vertex1, vertex2, ... ] 
+    // +-------------------------------
+    context.prototype.toPathArray = function() {
+	if( this.triangles.length == 0 )
+	    return [];
+	
+	var arr = [];
+	for( var t = 0; t < this.triangles.length; t++ ) {
+	    var cc = this.triangles[t].getCircumcircle();
+	    arr.push( cc );
+	}
+
+	// Cloes path?
+	if( !this.isOpen() ) {
+	    var cc = this.triangles[0].getCircumcircle();
+	    arr.push( cc );
+	}
+	
+	return arr;
+    }
     
 })(window ? window : module.export);
