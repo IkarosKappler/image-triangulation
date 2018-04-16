@@ -11,6 +11,8 @@ Feature list
  * Export vertex list (JSON file).
  * Import vertext list (JSON file).
  * Since version 1.0.1 there is also a Voronoi-from-Delaunay computation.
+ * Version 1.0.3: Voronoi cells from quadratic bezier curves.
+ * Version 1.0.4: Voronoi cell from cubic bezier curves.
 
 ## Changelog
  * v1.0.3 Added the Polygon class.
@@ -38,6 +40,16 @@ See the Voronoi diagram (still experimental)
 ![Voronoi diagram](screenshots/voronoi-a-50pct.png "Voronoi Diagram A")
 
 ![Voronoi diagram](screenshots/voronoi-a-with-triangles-50pct.png "Voronoi Diagram A with triangles")
+
+
+See the Voronoi cells from (a) quadratic and (b) cubic bezier curves:
+![Quadratic Bezier Voronoi Cells](screenshots/voronoi-bezier-cell-a-quadratic.png "Quadratic Bezier Voronoi Cells")
+![Cubic Bezier Voronoi Cells with threshold 1.0](screenshots/voronoi-bezier-cell-a-cubic.png "Cubic Bezier Voronoi Cells with threshold 1.0")
+
+More cells:
+![Cubic and quadratic bezier Voronoi cells with threshold 1.0](screenshots/voronoi-bezier-cell-b-both.png "Cubic and quadratic bezier Voronoi cells with threshold 1.0")
+
+
 
 Live [demo here](http://int2byte.de/public/image-triangulation/main.html "Demo here")
 

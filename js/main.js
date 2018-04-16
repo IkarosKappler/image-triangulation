@@ -7,7 +7,9 @@
  * @date     2017-07-31
  * @modified 2018-04-03 Added the voronoi-from-delaunay computation.
  * @modified 2018-04-11 Added the option to draw circumcircles.
- * @version  1.0.3
+ * @modified 2018-04-14 Added quadratic bezier Voronoi cells.
+ * @modified 2018-04-16 Added cubic bezier Voronoi cells.
+ * @version  1.0.4
  **/
 
 
