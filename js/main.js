@@ -26,6 +26,7 @@
 	    drawEdges           : false,
 	    drawCircumCircles   : false,
 	    drawQuadraticCurves : false,
+	    drawCubicCurves     : false,
 	    optimizeGaps        : false,
 	    pointCount          : 25,
 	    fullSize            : true,
@@ -236,7 +237,7 @@
 	// +-------------------------------
 	var redraw = function() {
 	    // Note that the image might have an alpha channel. Clear the scene first.
-	    console.log( '[redraw] config.backgroundColor=' + config.backgroundColor );
+	    //console.log( '[redraw] config.backgroundColor=' + config.backgroundColor );
 	    ctx.fillStyle = config.backgroundColor; // 'white';
 	    ctx.fillRect(0,0,canvasSize.width,canvasSize.height);
 
@@ -264,6 +265,9 @@
 
 	    if( config.drawQuadraticCurves )
 		drawQuadraticBezierVoronoi();
+
+	    if( config.drawCubicCurves )
+		; // drawCubicBezierVoronoi(); 
 	    
 	    // Draw points?
 	    if( config.drawPoints ) {
@@ -274,9 +278,10 @@
 	    }
 	    
 	    // Draw voronoi diagram?
-	    if( config.makeVoronoiDiagram ) {
+	    if( config.makeVoronoiDiagram )
 		drawVoronoiDiagram();
-	    }
+	    if( config.drawCubicCurves )
+		drawCubicBezierVoronoi();
 	};
 
 	
@@ -296,10 +301,10 @@
 		// Close cell?
 		// Only cells inside the triangulation should be closed. Border
 		// cell are incomplete.
-		if( !cell.isOpen() ) // ( cell[0].isAdjacent( cell[ cell.length-1] ) )
+		if( !cell.isOpen() ) // cell[0].isAdjacent( cell[cell.length-1] ) )
 		    ctx.closePath();
 		ctx.strokeStyle = 'green';
-		ctx.lineWidth = 3;
+		ctx.lineWidth = 1;
 		ctx.stroke();
 	    }
 	};
@@ -324,12 +329,14 @@
 	// | Draw the voronoi cells as quadratic bezier curves.
 	// +-------------------------------
 	var drawQuadraticBezierVoronoi = function() {
+	    console.log( 'Draw quadratic curve.' );
 	    for( var c in voronoiDiagram ) {
 		var cell = voronoiDiagram[c];
 		if( cell.isOpen() || cell.triangles.length < 3 )
 		    continue;
 		
 		ctx.beginPath();
+
 		/*
 		var cc0 = cell.triangles[0].getCircumcircle().center;
 		var cc1 = cell.triangles[1].getCircumcircle().center;
@@ -350,21 +357,55 @@
 		}
 		*/
 
-		var qbezier = new Polygon(cell.toPathArray,cell.isOpen()).toQuadraticBezierData();
+		// Do the above with some neat polygon and bezier transformations.
+		var qbezier = new Polygon(cell.toPathArray(),cell.isOpen()).toQuadraticBezierData();
 		ctx.moveTo( qbezier[0].x, qbezier[0].y );
 		for( var t = 1; t < qbezier.length; t+=2 ) {
 		    ctx.quadraticCurveTo( qbezier[t].x, qbezier[t].y, qbezier[t+1].x, qbezier[t+1].y );
 		}
-
-		if( !cell.isOpen() )
-		    ctx.closePath();
-		ctx.strokeStyle = 'red';
+		
+		ctx.closePath();
+		ctx.strokeStyle = 'rgb(255,128,0)';
 		ctx.fillStyle = 'rgba(0,128,255,0.5)';
-		ctx.stroke();
 		ctx.fill();
+		ctx.stroke();
+	    } // END for
+	    
+	};
+
+	// +---------------------------------------------------------------------------------
+	// | Draw the voronoi cells as quadratic bezier curves.
+	// +-------------------------------
+	var drawCubicBezierVoronoi = function() {
+	    console.log( 'draw quadratic curves' );
+	    for( var c in voronoiDiagram ) {
+		var cell = voronoiDiagram[c];
+		if( cell.isOpen() || cell.triangles.length < 3 )
+		    continue;
+		
+		ctx.beginPath();
+		
+		var cbezier = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierData( 1.0 );
+		//console.log( 'c', c, 'length', cbezier.length );
+		ctx.moveTo( cbezier[0].x, cbezier[0].y );
+		for( var t = 1; t+2 < cbezier.length; t+=3 ) {
+		    ctx.bezierCurveTo( cbezier[t].x, cbezier[t].y,
+				       cbezier[t+1].x, cbezier[t+1].y,
+				       cbezier[t+2].x, cbezier[t+2].y
+				     );
+		}
+		ctx.closePath();
+		ctx.fillStyle = 'rgba(0,128,255,0.5)';
+		ctx.strokeStyle = 'rgb(255,128,0)';
+		ctx.fill();
+		ctx.stroke();
+		//ctx.closePath();
+
+		//drawPoint( cbezier[0], 'magenta' );
+		//drawPoint( cbezier[ cbezier.length-1 ], 'black' );
 	    }
 	    
-	}
+	}; // END drawCubicBezierVoronoi
 	
 	// +---------------------------------------------------------------------------------
 	// | Handle a dropped image: initially draw the image (to fill the background).
@@ -503,7 +544,7 @@
 		var ratio           = canvasSize.height/canvasSize.width;
 		var hCount          = Math.round( (borderPoints/2)*ratio );
 		var vCount          = (borderPoints/2)-hCount;
-		console.log( 'remainingPoints=' + remainingPoints + ', borderPoints=' + borderPoints + ', hCount=' + hCount + ', vCount=' + vCount );
+		// console.log( 'remainingPoints=' + remainingPoints + ', borderPoints=' + borderPoints + ', hCount=' + hCount + ', vCount=' + vCount );
 		while( vCount > 0 ) {
 		    pointList.push( new Vertex(0, randomInt(canvasSize.height)) );
 		    pointList.push( new Vertex(canvasSize.width, randomInt(canvasSize.height)) );		    
@@ -655,6 +696,7 @@
 	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
 	    gui.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles will be drawn.");
 	    gui.add(config, 'drawQuadraticCurves').onChange( redraw ).title("If checked the Voronoi's quadratic curves will be drawn.");
+	    gui.add(config, 'drawCubicCurves').onChange( redraw ).title("(Experimental) If checked the Voronoi's cubic curves will be drawn.");
 	    gui.add(config, 'autoUpdateOnChange').onChange( rebuild ).title("Update when points are added.");
 	    gui.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
 	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");

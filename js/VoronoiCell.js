@@ -30,7 +30,7 @@
     // +-------------------------------
     context.VoronoiCell.prototype.isOpen = function() {
 	// There must be at least three triangles
-	return this.triangles.length < 3 && !this.triangles[0].isAdjacent(this.triangles[this.triangles.length-1]);	   
+	return this.triangles.length < 3 || !this.triangles[0].isAdjacent(this.triangles[this.triangles.length-1]);	   
     };
 
 
@@ -40,9 +40,9 @@
     // | "x0,y0 x1,y1 x2,y2 ..." 
     // +-------------------------------
     context.VoronoiCell.prototype.toPathSVGString = function() {
-	/* if( this.triangles.length == 0 )
+	if( this.triangles.length == 0 )
 	    return "";
-
+	/*
 	var arr = [];
 	for( var t = 0; t < this.triangles.length; t++ ) {
 	    var cc = this.triangles[t].getCircumcircle();
@@ -59,10 +59,11 @@
 	    arr.push( cc.center.y );
 	}
 	
-	return arr.join(' '); */
-
+	return arr.join(' '); 
+	*/
+	
 	var arr = this.toPathArray();
-	return arr.map( function(vert) { return ''+vert.x+','+ver.y; } ).join(' '); 
+	return arr.map( function(vert) { return ''+vert.x+','+vert.y; } ).join(' '); 
     };
 
     
@@ -71,21 +72,23 @@
     // |
     // | [vertex0, vertex1, vertex2, ... ] 
     // +-------------------------------
-    context.prototype.toPathArray = function() {
+    context.VoronoiCell.prototype.toPathArray = function() {
 	if( this.triangles.length == 0 )
 	    return [];
 	
 	var arr = [];
 	for( var t = 0; t < this.triangles.length; t++ ) {
 	    var cc = this.triangles[t].getCircumcircle();
-	    arr.push( cc );
+	    arr.push( cc.center );
 	}
 
 	// Cloes path?
+	/*
 	if( !this.isOpen() ) {
 	    var cc = this.triangles[0].getCircumcircle();
-	    arr.push( cc );
+	    arr.push( cc.center );
 	}
+	*/
 	
 	return arr;
     }
