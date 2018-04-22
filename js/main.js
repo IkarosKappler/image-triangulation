@@ -149,6 +149,7 @@
 	    ctx.stroke();
 	}
 
+	
 	// +---------------------------------------------------------------------------------
 	// | Draw the given point with the specified (CSS-) color.
 	// +-------------------------------
@@ -160,6 +161,7 @@
 	    ctx.fill();
 	};
 
+	
 	// +---------------------------------------------------------------------------------
 	// | Draw the given triangle with the specified (CSS-) color.
 	// +-------------------------------
@@ -176,6 +178,7 @@
 		ctx.stroke();
 	};
 
+	
 	// +---------------------------------------------------------------------------------
 	// | Get average color in triangle.
 	// | @param imageBuffer:canvas
@@ -311,6 +314,7 @@
 	    }
 	};
 
+	
 	// +---------------------------------------------------------------------------------
 	// | Draw the circumcircles of all triangles.
 	// +-------------------------------
@@ -331,33 +335,12 @@
 	// | Draw the voronoi cells as quadratic bezier curves.
 	// +-------------------------------
 	var drawQuadraticBezierVoronoi = function() {
-	    console.log( 'Draw quadratic curve.' );
 	    for( var c in voronoiDiagram ) {
 		var cell = voronoiDiagram[c];
 		if( cell.isOpen() || cell.triangles.length < 3 )
 		    continue;
 		
 		ctx.beginPath();
-
-		/*
-		var cc0 = cell.triangles[0].getCircumcircle().center;
-		var cc1 = cell.triangles[1].getCircumcircle().center;
-		var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
-					     cc0.y + (cc1.y-cc0.y)/2 );
-		ctx.moveTo( edgeCenter.x, edgeCenter.y );
-
-		for( var t = 1; t <= cell.triangles.length; t++ ) {
-
-		    cc0 = cell.triangles[ t%cell.triangles.length ].getCircumcircle().center;
-		    cc1 = cell.triangles[ (t+1)%cell.triangles.length ].getCircumcircle().center;
-		    var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
-						 cc0.y + (cc1.y-cc0.y)/2 );
-		    
-		    ctx.quadraticCurveTo( cc0.x, cc0.y, edgeCenter.x, edgeCenter.y );
-		    
-		    cc0 = cc1;
-		}
-		*/
 
 		// Do the above with some neat polygon and bezier transformations.
 		var qbezier = new Polygon(cell.toPathArray(),cell.isOpen()).toQuadraticBezierData();
@@ -388,7 +371,6 @@
 		ctx.beginPath();
 		
 		var cbezier = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierData( 1.0 );
-		//console.log( 'c', c, 'length', cbezier.length );
 		ctx.moveTo( cbezier[0].x, cbezier[0].y );
 		for( var t = 1; t+2 < cbezier.length; t+=3 ) {
 		    ctx.bezierCurveTo( cbezier[t].x, cbezier[t].y,
@@ -401,10 +383,6 @@
 		ctx.strokeStyle = 'rgb(255,128,0)';
 		ctx.fill();
 		ctx.stroke();
-		//ctx.closePath();
-
-		//drawPoint( cbezier[0], 'magenta' );
-		//drawPoint( cbezier[ cbezier.length-1 ], 'black' );
 	    }
 	    
 	}; // END drawCubicBezierVoronoi
@@ -636,15 +614,26 @@
 	    }
 
 	    // Draw circumcircles?
-	    for( var t in triangles ) {
-		// console.log( t );
-		var cc = triangles[t].getCircumcircle();
-		//ctx.beginPath();
-		//ctx.arc( cc.center.x, cc.center.y, cc.radius, 0, Math.PI*2 );
-		//ctx.stroke();
-		buffer.push( '   <circle cx="' + cc.center.x + '" cy="' + cc.center.y + '" r="' + cc.radius + '" style="stroke: white; stroke-width 0.5; fill : none;" class="circum" />' );
+	    if( config.drawCircumcircles ) {
+		for( var t in triangles ) {
+		    var cc = triangles[t].getCircumcircle();
+		    buffer.push( '   <circle cx="' + cc.center.x + '" cy="' + cc.center.y + '" r="' + cc.radius + '" style="stroke: white; stroke-width 0.5; fill : none;" class="circum" />' );
+		}
 	    }
 	    
+	    // Draw quadratic bezier cells?
+	    if( config.drawQuadraticCurves ) {
+		console.log('draw quadratic bezier curves' );
+		for( var c in voronoiDiagram ) {
+		    var cell = voronoiDiagram[c];
+		    var qstring = new Polygon(cell.toPathArray(),cell.isOpen()).toQuadraticBezierSVGString();
+		    console.log( 'qstring['+c+']=' + qstring );
+		    //ctx.fillStyle = 'rgba(0,128,255,0.5)';
+		    //ctx.strokeStyle = 'rgb(255,128,0)';
+		    buffer.push( '   <path d="' + qstring + '" stroke="rgb(255,128,0)" fill="rgba(0,128,255,0.5)" class="qcell" />' );
+		}
+	    }
+		
 	    // Draw points?
 	    if( config.drawPoints ) {
 		for( var i in pointList ) {
@@ -662,7 +651,7 @@
 	    buffer.push( '</svg>' );
 	    
 	    var svgCode = buffer.join("\n");
-	    console.log( svgCode );
+	    //console.log( svgCode );
 	    $('#svg-preview').empty().html( svgCode );
 	    var blob = new Blob([svgCode], {
 		type: 'application/svg+xml;charset=utf-8'
@@ -758,7 +747,8 @@
 	} );
 
 	// Init
-	randomPoints(true,false,true); // clear ; no full cover ; do redraw
+	randomPoints(true,false,false); // clear ; no full cover ; do not redraw
+	rebuild();
 	
     } ); // END document.ready
     

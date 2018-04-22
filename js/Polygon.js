@@ -9,7 +9,6 @@
  **/
 
 (function(_context) {
-    console.log( 'polygon' );
     // +---------------------------------------------------------------------------------
     // | The constructor.
     // |
@@ -36,15 +35,15 @@
 	if( this.vertices.length < 3 )
 	    return [];
 	var qbezier = [];
-	var cc0 = this.vertices[0]; // cell.triangles[0].getCircumcircle().center;
-	var cc1 = this.vertices[1]; // cell.triangles[1].getCircumcircle().center;
+	var cc0 = this.vertices[0]; 
+	var cc1 = this.vertices[1]; 
 	var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
 				     cc0.y + (cc1.y-cc0.y)/2 );
 	qbezier.push( edgeCenter );
 	var limit = this.isOpen ? this.vertices.length : this.vertices.length+1;
 	for( var t = 1; t < limit; t++ ) {  
-	    cc0 = this.vertices[ t%this.vertices.length ]; // .getCircumcircle().center;
-	    cc1 = this.vertices[ (t+1)%this.vertices.length ]; // .getCircumcircle().center;
+	    cc0 = this.vertices[ t%this.vertices.length ];
+	    cc1 = this.vertices[ (t+1)%this.vertices.length ];
 	    var edgeCenter = new Vertex( cc0.x + (cc1.x-cc0.x)/2,
 					 cc0.y + (cc1.y-cc0.y)/2 );
 	    qbezier.push( cc0 );
@@ -54,11 +53,28 @@
 	return qbezier;
     };
 
+    // +---------------------------------------------------------------------------------
+    // | Convert this polygon to a quadratic bezier curve, represented as an SVG data string
+    // |
+    // | @return svgData:string
+    // +-------------------------------
+    _context.Polygon.prototype.toQuadraticBezierSVGString = function() {
+	var qdata = this.toQuadraticBezierData();
+	if( qdata.length == 0 )
+	    return "";
+	var buffer = [ 'M ' + qdata[0].x+' '+qdata[0].y ];
+	for( var i = 1; i < qdata.length; i+=2 ) {
+	    buffer.push( 'Q ' + qdata[i].x+' '+qdata[i].y + ', ' + qdata[i+1].x+' '+qdata[i+1].y );
+	}
+	return buffer.join(' ');
+    };
 
     // +---------------------------------------------------------------------------------
     // | Convert this polygon to a sequence of cubic bezier curves.
     // |
     // | @param treshold:boolean
+    // |
+    // | @return cubicBezierData:array:vector
     // +-------------------------------
     _context.Polygon.prototype.toCubicBezierData = function( threshold ) {
 
@@ -94,6 +110,24 @@
 	}
 	return cbezier;
 	
+    };
+
+    // +---------------------------------------------------------------------------------
+    // | Convert this polygon to a cubic bezier curve, represented as an SVG data string
+    // |
+    // | @return svgData:string
+    // +-------------------------------
+    _context.Polygon.prototype.toCubicBezierSVGString = function() {
+	var qdata = this.toCubicBezierData();
+	if( qdata.length == 0 )
+	    return "";
+	var buffer = [ ''+qdata[0].x+','+qdata[1].y ];
+	for( var i = 1; i < qdata.length; i+=3 ) {
+	    buffer.push( qdata[i].x+','+qdata[i].y );
+	    buffer.push( qdata[i+1].x+','+qdata[i+1].y );
+	    buffer.push( qdata[i+2].y+','+qdata[i+2].y );
+	}
+	return buffer.join(' ');
     };
     
 })(window ? window : module.export );

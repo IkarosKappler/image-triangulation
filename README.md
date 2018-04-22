@@ -15,6 +15,8 @@ Feature list
  * Version 1.0.4: Voronoi cell from cubic bezier curves.
 
 ## Changelog
+ * v1.0.5 SVG export now also exports quadratic Bézier voronoi cells.
+ * v1.0.4 Added quadratic voronoi cells.
  * v1.0.3 Added the Polygon class.
  * v1.0.2 Minor code changes.
  * v1.0.1 Added the option to draw circumcircles. 
