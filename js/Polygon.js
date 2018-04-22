@@ -121,11 +121,9 @@
 	var qdata = this.toCubicBezierData();
 	if( qdata.length == 0 )
 	    return "";
-	var buffer = [ ''+qdata[0].x+','+qdata[1].y ];
+	var buffer = [ 'M ' + qdata[0].x+' '+qdata[0].y ];
 	for( var i = 1; i < qdata.length; i+=3 ) {
-	    buffer.push( qdata[i].x+','+qdata[i].y );
-	    buffer.push( qdata[i+1].x+','+qdata[i+1].y );
-	    buffer.push( qdata[i+2].y+','+qdata[i+2].y );
+	    buffer.push( 'C ' + qdata[i].x+' '+qdata[i].y + ', ' + qdata[i+1].x+' '+qdata[i+1].y + ', ' + qdata[i+2].x + ' ' + qdata[i+2].y );
 	}
 	return buffer.join(' ');
     };

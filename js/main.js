@@ -9,7 +9,7 @@
  * @modified 2018-04-11 Added the option to draw circumcircles.
  * @modified 2018-04-14 Added quadratic bezier Voronoi cells.
  * @modified 2018-04-16 Added cubic bezier Voronoi cells.
- * @version  1.0.4
+ * @version  1.0.6
  **/
 
 
@@ -623,14 +623,21 @@
 	    
 	    // Draw quadratic bezier cells?
 	    if( config.drawQuadraticCurves ) {
-		console.log('draw quadratic bezier curves' );
+		//console.log('draw quadratic bezier curves' );
 		for( var c in voronoiDiagram ) {
 		    var cell = voronoiDiagram[c];
 		    var qstring = new Polygon(cell.toPathArray(),cell.isOpen()).toQuadraticBezierSVGString();
-		    console.log( 'qstring['+c+']=' + qstring );
-		    //ctx.fillStyle = 'rgba(0,128,255,0.5)';
-		    //ctx.strokeStyle = 'rgb(255,128,0)';
-		    buffer.push( '   <path d="' + qstring + '" stroke="rgb(255,128,0)" fill="rgba(0,128,255,0.5)" class="qcell" />' );
+		    buffer.push( '   <path d="' + qstring + '" stroke="rgb(255,128,0)" fill="rgba(0,128,255,0.5)" class="qvc" />' );
+		}
+	    }
+
+	    // Draw quadratic bezier cells?
+	    if( config.drawCubicCurves ) {
+		console.log('draw cubic bezier curves' );
+		for( var c in voronoiDiagram ) {
+		    var cell = voronoiDiagram[c];
+		    var cstring = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierSVGString();
+		    buffer.push( '   <path d="' + cstring + '" stroke="rgb(255,128,0)" fill="rgba(0,128,255,0.5)" class="cvc" />' );
 		}
 	    }
 		
