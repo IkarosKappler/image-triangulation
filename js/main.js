@@ -9,11 +9,13 @@
  * @modified 2018-04-11 Added the option to draw circumcircles.
  * @modified 2018-04-14 Added quadratic bezier Voronoi cells.
  * @modified 2018-04-16 Added cubic bezier Voronoi cells.
+ * @modified 2018-04-22 Added SVG export for cubic and quadratic voronoi cells.
  * @version  1.0.6
  **/
 
 
 (function($) {
+    "use strict";
     
     var DEFAULT_CANVAS_WIDTH = 1024;
     var DEFAULT_CANVAS_HEIGHT = 768;
@@ -21,28 +23,29 @@
     $( document ).ready( function() {
 
 	var config = {
-	    fillTriangles       : true,
-	    makeVoronoiDiagram  : false,
-	    fillAlphaOnly       : false,
-	    drawPoints          : true,
-	    drawEdges           : false,
-	    drawCircumCircles   : false,
-	    drawQuadraticCurves : false,
-	    drawCubicCurves     : false,
-	    optimizeGaps        : false,
-	    pointCount          : 25,
-	    fullSize            : true,
-	    triangulate         : true,
-	    autoUpdateOnChange  : true,
-	    backgroundColor     : '#ffffff',
-	    loadImage           : function() { $('input#file').data('type','image-upload').trigger('click'); },
-	    clear               : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
-	    randomize           : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
-	    fullCover           : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild(); },
-	    fullCoverExtended   : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild() },
-	    exportSVG           : function() { exportSVG(); },
-	    exportPointset      : function() { exportPointset(); },
-	    importPointset      : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
+	    fillTriangles         : true,
+	    makeVoronoiDiagram    : false,
+	    fillAlphaOnly         : false,
+	    drawPoints            : true,
+	    drawEdges             : false,
+	    drawCircumCircles     : false,
+	    drawQuadraticCurves   : false,
+	    drawCubicCurves       : false,
+	    voronoiCubicThreshold : 1.0,
+	    optimizeGaps          : false,
+	    pointCount            : 25,
+	    fullSize              : true,
+	    triangulate           : true,
+	    autoUpdateOnChange    : true,
+	    backgroundColor       : '#ffffff',
+	    loadImage             : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    clear                 : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
+	    randomize             : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
+	    fullCover             : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild(); },
+	    fullCoverExtended     : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild() },
+	    exportSVG             : function() { exportSVG(); },
+	    exportPointset        : function() { exportPointset(); },
+	    importPointset        : function() { $('input#file').data('type','pointset-upload').trigger('click'); } 
 	};
 	
 	var $canvas             = $( 'canvas#my-canvas' );
@@ -242,7 +245,6 @@
 	// +-------------------------------
 	var redraw = function() {
 	    // Note that the image might have an alpha channel. Clear the scene first.
-	    //console.log( '[redraw] config.backgroundColor=' + config.backgroundColor );
 	    ctx.fillStyle = config.backgroundColor; // 'white';
 	    ctx.fillRect(0,0,canvasSize.width,canvasSize.height);
 
@@ -268,11 +270,11 @@
 	    if( config.drawCircumCircles )
 		drawCircumCircles();
 
-	    if( config.drawQuadraticCurves )
-		drawQuadraticBezierVoronoi();
+	    //if( config.drawQuadraticCurves )
+	    //   drawQuadraticBezierVoronoi();
 
-	    if( config.drawCubicCurves )
-		; // drawCubicBezierVoronoi(); 
+	    //if( config.drawCubicCurves )
+	    //	drawCubicBezierVoronoi(); 
 	    
 	    // Draw points?
 	    if( config.drawPoints ) {
@@ -285,6 +287,8 @@
 	    // Draw voronoi diagram?
 	    if( config.makeVoronoiDiagram )
 		drawVoronoiDiagram();
+	    if( config.drawQuadraticCurves )
+		drawQuadraticBezierVoronoi();
 	    if( config.drawCubicCurves )
 		drawCubicBezierVoronoi();
 	};
@@ -294,7 +298,7 @@
 	// | Draw the stored voronoi diagram.
 	// +-------------------------------	
 	var drawVoronoiDiagram = function() {
-	    for( v in voronoiDiagram ) {
+	    for( var v in voronoiDiagram ) {
 		var cell = voronoiDiagram[v];
 		ctx.beginPath();
 		var centroid = cell.triangles[ 0 ].getCircumcircle().center;
@@ -370,7 +374,7 @@
 		
 		ctx.beginPath();
 		
-		var cbezier = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierData( 1.0 );
+		var cbezier = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierData( config.voronoiCubicThreshold );
 		ctx.moveTo( cbezier[0].x, cbezier[0].y );
 		for( var t = 1; t+2 < cbezier.length; t+=3 ) {
 		    ctx.bezierCurveTo( cbezier[t].x, cbezier[t].y,
@@ -489,7 +493,6 @@
 		    var tri = triangles[i];
 		    var circumCircle = tri.getCircumcircle(); // { center:Vector, radius:Number }
 		    var scaleFactor = (circumCircle.radius+0.1) / circumCircle.radius;
-		    //console.log( 'scaleFactor=' + scaleFactor + ', center=' + JSON.stringify(circumCircle.center) + ', radius=' + circumCircle.radius );
 		    
 		    tri.a = tri.a.clone().scale( scaleFactor, circumCircle.center );
 		    tri.b = tri.b.clone().scale( scaleFactor, circumCircle.center );
@@ -524,7 +527,7 @@
 		var ratio           = canvasSize.height/canvasSize.width;
 		var hCount          = Math.round( (borderPoints/2)*ratio );
 		var vCount          = (borderPoints/2)-hCount;
-		// console.log( 'remainingPoints=' + remainingPoints + ', borderPoints=' + borderPoints + ', hCount=' + hCount + ', vCount=' + vCount );
+		
 		while( vCount > 0 ) {
 		    pointList.push( new Vertex(0, randomInt(canvasSize.height)) );
 		    pointList.push( new Vertex(canvasSize.width, randomInt(canvasSize.height)) );		    
@@ -573,7 +576,6 @@
 	// +-------------------------------
 	var resizeCanvas = function() {
 	    var _setSize = function(w,h) {
-		console.log( 'setSize');
 		ctx.canvas.width  = w;
 		ctx.canvas.height = h;
 		
@@ -585,7 +587,7 @@
 	    };
 	    var width  = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
             var height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-	    if( config.fullSize ) _setSize( width, height ); // window.innerWidth, window.innerHeight );
+	    if( config.fullSize ) _setSize( width, height );
 	    else                  _setSize( DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT );
 	    redraw();
 	};
@@ -598,8 +600,7 @@
 	// | (export does not include the image).
 	// +-------------------------------
 	var exportSVG = function() {
-	    var buffer = [];
-	    //buffer.push( '<svg width="' + canvasSize.width + '" height="' + canvasSize.height + '">' );
+	    var buffer = [];y
 	    buffer.push( '<?xml version="1.0" standalone="yes"?>' );
 	    buffer.push( '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' );
 	    buffer.push( '   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' );
@@ -636,7 +637,7 @@
 		console.log('draw cubic bezier curves' );
 		for( var c in voronoiDiagram ) {
 		    var cell = voronoiDiagram[c];
-		    var cstring = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierSVGString();
+		    var cstring = new Polygon(cell.toPathArray(),cell.isOpen()).toCubicBezierSVGString( config.voronoiCubicThreshold );
 		    buffer.push( '   <path d="' + cstring + '" stroke="rgb(255,128,0)" fill="rgba(0,128,255,0.5)" class="cvc" />' );
 		}
 	    }
@@ -658,7 +659,6 @@
 	    buffer.push( '</svg>' );
 	    
 	    var svgCode = buffer.join("\n");
-	    //console.log( svgCode );
 	    $('#svg-preview').empty().html( svgCode );
 	    var blob = new Blob([svgCode], {
 		type: 'application/svg+xml;charset=utf-8'
@@ -685,27 +685,39 @@
         { 
 	    var gui = new dat.gui.GUI();
 	    gui.remember(config);
-	    gui.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
-	    gui.add(config, 'triangulate').onChange( rebuild ).title("Triangulate the point set?");
-	    gui.add(config, 'makeVoronoiDiagram').onChange( rebuild ).title("(Experimental) Make voronoi diagram from the triangle set.");
-	    gui.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled.");
-	    gui.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
-	    gui.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
-	    gui.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
-	    gui.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles will be drawn.");
-	    gui.add(config, 'drawQuadraticCurves').onChange( redraw ).title("If checked the Voronoi's quadratic curves will be drawn.");
-	    gui.add(config, 'drawCubicCurves').onChange( redraw ).title("(Experimental) If checked the Voronoi's cubic curves will be drawn.");
-	    gui.add(config, 'autoUpdateOnChange').onChange( rebuild ).title("Update when points are added.");
-	    gui.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
-	    gui.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
-	    gui.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
-	    gui.add(config, 'clear').name('Clear all').title("Clear all.");
-	    gui.add(config, 'loadImage').name('Load Image').title("Load a background image to pick triangle colors from.");
-	    gui.add(config, 'randomize').name('Randomize').title("Randomize the point set.");
-	    gui.add(config, 'fullCover').name('Full Cover').title("Randomize the point set with full canvas coverage.");
-	    gui.add(config, 'exportSVG').name('Export SVG').title("Export the current triangulation as a vector image.");
-	    gui.add(config, 'exportPointset').name('Export point set').title("Export the point set as JSON.");
-	    gui.add(config, 'importPointset').name('Import point set').title("Import the point set from JSON.");	    
+
+	    var f0 = gui.addFolder('Points');
+	    f0.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
+	    f0.add(config, 'randomize').name('Randomize').title("Randomize the point set.");
+	    f0.add(config, 'fullCover').name('Full Cover').title("Randomize the point set with full canvas coverage.");
+	    f0.add(config, 'clear').name('Clear all').title("Clear all.");
+	    f0.add(config, 'drawPoints').onChange( redraw ).title("If checked the points will be drawn.");
+	    f0.open();
+	    
+	    var f1 = gui.addFolder('Delaunay');
+	    f1.add(config, 'triangulate').onChange( rebuild ).title("Triangulate the point set?");
+	    f1.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled.");
+	    f1.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
+	    f1.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
+	    f1.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles will be drawn.");
+	    f1.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
+
+	    var f2 = gui.addFolder('Voronoi');
+	    f2.add(config, 'makeVoronoiDiagram').onChange( rebuild ).title("Make voronoi diagram from the triangle set.");
+	    f2.add(config, 'drawQuadraticCurves').onChange( redraw ).title("If checked the Voronoi's quadratic curves will be drawn.");
+	    f2.add(config, 'drawCubicCurves').onChange( redraw ).title("If checked the Voronoi's cubic curves will be drawn.");
+	    f2.add(config, 'voronoiCubicThreshold').min(0.0).max(1.0).onChange( redraw ).title("(Experimental) Specifiy the cubic coefficients.");
+	    
+	    var f3 = gui.addFolder('Settings');
+	    f3.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
+	    f3.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
+	    f3.add(config, 'loadImage').name('Load Image').title("Load a background image to pick triangle colors from.");
+	    f3.add(config, 'autoUpdateOnChange').onChange( rebuild ).title("Update when points are added.");
+	    
+	    var f4 = gui.addFolder('Import & Export');
+	    f4.add(config, 'exportSVG').name('Export SVG').title("Export the current triangulation as a vector image.");
+	    f4.add(config, 'exportPointset').name('Export point set').title("Export the point set as JSON.");
+	    f4.add(config, 'importPointset').name('Import point set').title("Import the point set from JSON.");	    
 	}
 
 

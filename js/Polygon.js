@@ -23,13 +23,13 @@
 
 
     // +---------------------------------------------------------------------------------
-    // | Convert this polygon to a sequence of quadratic bezier curves.
+    // | Convert this polygon to a sequence of quadratic Bézier curves.
     // |
     // | The first vertex in the returned array is the start point.
     // | The following sequence are pairs of control-point-and-end-point:
     // | startPoint, controlPoint0, pathPoint1, controlPoint1, pathPoint2, controlPoint2, ..., endPoint  
     // |
-    // | @param vertices:Array[Vertex] An array of 2d vertices that shape the polygon
+    // | @return Array[Vertex] An array of 2d vertices that shape the quadratic Bézier curve.
     // +-------------------------------
     _context.Polygon.prototype.toQuadraticBezierData = function() {
 	if( this.vertices.length < 3 )
@@ -70,18 +70,20 @@
     };
 
     // +---------------------------------------------------------------------------------
-    // | Convert this polygon to a sequence of cubic bezier curves.
+    // | Convert this polygon to a sequence of cubic Bézier curves.
     // |
-    // | @param treshold:boolean
+    // | The first vertex in the returned array is the start point.
+    // | The following sequence are triplets of (first-control-point, secnond-control-point, end-point):
+    // | startPoint, controlPoint0_0, controlPoint1_1, pathPoint1, controlPoint1_0, controlPoint1_1, ..., endPoint  
     // |
-    // | @return cubicBezierData:array:vector
+    // | @param treshold:float (default is 1.0) A threshold that defines the pointyness of the curve, must be between 0.0 and 1.0.
+    // |
+    // | @return Array[Vertex] An array of 2d vertices that shape the cubic Bézier curve.
     // +-------------------------------
     _context.Polygon.prototype.toCubicBezierData = function( threshold ) {
 
-	if( typeof treshhold == 'undefined' )
+	if( typeof threshold == 'undefined' )
 	    threshold = 1.0;
-
-	console.log( 'threshold=' + threshold );
 	
 	if( this.vertices.length < 3 )
 	    return [];
@@ -117,8 +119,8 @@
     // |
     // | @return svgData:string
     // +-------------------------------
-    _context.Polygon.prototype.toCubicBezierSVGString = function() {
-	var qdata = this.toCubicBezierData();
+    _context.Polygon.prototype.toCubicBezierSVGString = function( threshold ) {
+	var qdata = this.toCubicBezierData( threshold );
 	if( qdata.length == 0 )
 	    return "";
 	var buffer = [ 'M ' + qdata[0].x+' '+qdata[0].y ];

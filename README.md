@@ -23,7 +23,7 @@ Feature list
  * v1.0.1 Added the option to draw circumcircles. 
 
 ## Todos:
- * Voronoi cell export
+ * Remove jQuery (it's not really required here).
 
 
 ## Screenshots
