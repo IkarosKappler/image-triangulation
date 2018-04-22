@@ -17,11 +17,13 @@
 (function($) {
     "use strict";
     
-    var DEFAULT_CANVAS_WIDTH = 1024;
-    var DEFAULT_CANVAS_HEIGHT = 768;
+    const DEFAULT_CANVAS_WIDTH = 1024;
+    const DEFAULT_CANVAS_HEIGHT = 768;
     
     $( document ).ready( function() {
-
+	// +---------------------------------------------------------------------------------
+	// | A global config that's attached to the dat.gui control interface.
+	// +-------------------------------
 	var config = {
 	    fillTriangles         : true,
 	    makeVoronoiDiagram    : false,
@@ -50,12 +52,14 @@
 	
 	var $canvas             = $( 'canvas#my-canvas' );
 	var ctx                 = $canvas[0].getContext('2d');
+	var draw                = new drawutils(ctx);
 	var activePointIndex    = 1;
 	var image               = null; // An image.
 	var imageBuffer         = null; // A canvas to read the pixel data from.
 	var triangles           = [];
 	var trianglesPointCount = -1;    // Keep track of the number of points when the triangles were generated.
 	var voronoiDiagram      = [];
+	
 	
 	var getFloat = function(selector) {
 	    return parseFloat( $(selector).val() );
@@ -136,32 +140,6 @@
 	var randomGreyscale = function() {
 	    var v = 32 + randomInt(255-32);
 	    return Color.makeRGB( v, v, v );
-	};
-
-	// +---------------------------------------------------------------------------------
-	// | Draw the given line (between the two points) with the specified (CSS-) color.
-	// +-------------------------------
-	var drawLine = function( zA, zB, color ) {
-	    //console.log( 'draw complex point at ' + z ); 
-	    var radius = 3;
-	    ctx.beginPath();
-	    ctx.moveTo( offset.x+zA.x, offset.y+zA.y );
-	    ctx.lineTo( offset.x+zB.x, offset.y+zB.y );
-	    ctx.strokeStyle = color;
-	    ctx.lineWidth = 1;
-	    ctx.stroke();
-	}
-
-	
-	// +---------------------------------------------------------------------------------
-	// | Draw the given point with the specified (CSS-) color.
-	// +-------------------------------
-	var drawPoint = function( p, color ) {
-	    var radius = 3;
-	    ctx.beginPath();
-	    ctx.arc( p.x, p.y, radius, 0, 2 * Math.PI, false );
-	    ctx.fillStyle = color;
-	    ctx.fill();
 	};
 
 	
@@ -269,18 +247,12 @@
 
 	    if( config.drawCircumCircles )
 		drawCircumCircles();
-
-	    //if( config.drawQuadraticCurves )
-	    //   drawQuadraticBezierVoronoi();
-
-	    //if( config.drawCubicCurves )
-	    //	drawCubicBezierVoronoi(); 
 	    
 	    // Draw points?
 	    if( config.drawPoints ) {
 		for( var i in pointList ) {
 		    var p = pointList[i];
-		    drawPoint( p, 'blue' );
+		    draw.point( p, 'blue' );
 		}
 	    }
 	    
