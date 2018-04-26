@@ -41,5 +41,18 @@
 	this.ctx.fillStyle = color;
 	this.ctx.fill();
     };
+
+
+    // +---------------------------------------------------------------------------------
+    // | Draw the given point with the specified (CSS-) color.
+    // +-------------------------------
+    _context.drawutils.prototype.circle = function( center, radius, color ) {
+	this.ctx.fillStyle = color;
+	this.ctx.beginPath();
+	this.ctx.arc( center.x, center.y, radius, 0, Math.PI*2 );
+	this.ctx.closePath();
+	this.ctx.stroke();
+    };
+    
     
 })(window ? window : module.export );

@@ -14,6 +14,9 @@
 
     context.delaunay2voronoi = function( pointList, triangles ) {
 
+	this.failedTriangleSet = null;
+	let _self = this;
+
 	// +---------------------------------------------------------------------------------
 	// | Convert the triangle set to the Voronoi diagram.
 	// +-------------------------------
@@ -72,6 +75,7 @@
 		if( tryOnce ) {
 		    // Possibility A (try to fix this): split the triangle set into two arrays and restart with each.
 		    // Possibility B (no fix for this): throw an error and terminate.
+		    _self.failedTriangleSet = triangleSet;
 		    throw "Error: this triangle set is not connected: " + JSON.stringify(triangleSet);
 		} else {
 		    // Triangle inside path found. Rearrange.

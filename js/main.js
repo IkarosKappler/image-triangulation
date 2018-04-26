@@ -488,9 +488,11 @@
 	    } catch( e ) {
 		// Draw illegal triangle set?
 		if( voronoiBuilder.failedTriangleSet ) {
+		    console.log( 'The error report contains an unconnected set of triangles ('+voronoiBuilder.failedTriangleSet.length+'):' );
 		    for( var i in voronoiBuilder.failedTriangleSet ) {
 			var tri = voronoiBuilder.failedTriangleSet[i];
 			drawTriangle( tri, 'red' );
+			draw.circle( tri.center, tri.radius, 'red' );
 		    }
 		}
 		throw e;
