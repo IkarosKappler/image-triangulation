@@ -572,7 +572,7 @@
 	// | (export does not include the image).
 	// +-------------------------------
 	var exportSVG = function() {
-	    var buffer = [];y
+	    var buffer = [];
 	    buffer.push( '<?xml version="1.0" standalone="yes"?>' );
 	    buffer.push( '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" ' );
 	    buffer.push( '   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' );
