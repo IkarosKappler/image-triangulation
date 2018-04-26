@@ -482,7 +482,19 @@
 	// | Convert the triangle set to the Voronoi diagram.
 	// +-------------------------------
 	var makeVoronoiDiagram = function() {
-	    voronoiDiagram = new delaunay2voronoi(pointList,triangles).build();
+	    var voronoiBuilder = new delaunay2voronoi(pointList,triangles);
+	    try {
+		voronoiDiagram = voronoiBuilder.build();
+	    } catch( e ) {
+		// Draw illegal triangle set?
+		if( voronoiBuilder.failedTriangleSet ) {
+		    for( var i in voronoiBuilder.failedTriangleSet ) {
+			var tri = voronoiBuilder.failedTriangleSet[i];
+			drawTriangle( tri, 'red' );
+		    }
+		}
+		throw e;
+	    }
 	    redraw();
 	}
 	
@@ -623,7 +635,7 @@
 	    }
 
 	    // Draw voronoi?
-	    for( v in voronoiDiagram ) {
+	    for( var v in voronoiDiagram ) {
 		var cell = voronoiDiagram[v];		
 		buffer.push( '   <polygon points="' + cell.toPathSVGString() +'" style="fill: none; stroke:green;stroke-width:2px;" />' );
 	    }
