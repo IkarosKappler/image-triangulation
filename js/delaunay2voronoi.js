@@ -14,8 +14,9 @@
 
     context.delaunay2voronoi = function( pointList, triangles ) {
 
-	this.failedTriangleSet = null;
-	let _self = this;
+	this.failedTriangleSets = [];
+	this.hasErrors          = false;
+	let _self               = this;
 
 	// +---------------------------------------------------------------------------------
 	// | Convert the triangle set to the Voronoi diagram.
@@ -27,11 +28,13 @@
 		// Find adjacent triangles for first point
 		var adjacentSubset = []; 
 		for( var t in triangles ) {
-		    if( triangles[t].a.equals(point) || triangles[t].b.equals(point) || triangles[t].c.equals(point) )
+		    if( triangles[t].a.equals(point) || triangles[t].b.equals(point) || triangles[t].c.equals(point) ) 
 			adjacentSubset.push( triangles[t] );
+		    
 		}
 		var path = subsetToPath(adjacentSubset);
-		voronoiDiagram.push( new VoronoiCell(path) );
+		if( path ) // There may be errors
+		    voronoiDiagram.push( new VoronoiCell(path) );
 	    }
 	    return voronoiDiagram;
 	};
@@ -75,8 +78,11 @@
 		if( tryOnce ) {
 		    // Possibility A (try to fix this): split the triangle set into two arrays and restart with each.
 		    // Possibility B (no fix for this): throw an error and terminate.
-		    _self.failedTriangleSet = triangleSet;
-		    throw "Error: this triangle set is not connected: " + JSON.stringify(triangleSet);
+		    // Possibility C (temp solution): Store the error for later reporting and continue.
+		    _self.failedTriangleSets.push( triangleSet );
+		    _self.hasErrors = true;
+		    // throw "Error: this triangle set is not connected: " + JSON.stringify(triangleSet);
+		    return null;
 		} else {
 		    // Triangle inside path found. Rearrange.
 		    return subsetToPath( triangleSet, t, true );

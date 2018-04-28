@@ -21,11 +21,10 @@
     const DEFAULT_CANVAS_WIDTH = 1024;
     const DEFAULT_CANVAS_HEIGHT = 768;
 
-    
-    /*var triggerEvent(element,event) {
-	element.dispatchEvent(event);
-	};*/
-    
+
+    // +---------------------------------------------------------------------------------
+    // | A helper function to trigger fake click events.
+    // +----------------------------
     var triggerClickEvent = function(element) {
 	console.log('dispatching custom event');
 	element.dispatchEvent( new MouseEvent('click', {
@@ -36,9 +35,12 @@
     };
 
     
-    
-    //$( document ).ready( function() {
+
+    // +---------------------------------------------------------------------------------
+    // | Initialize everything.
+    // +----------------------------
     window.addEventListener('load',function() {
+	
 	// +---------------------------------------------------------------------------------
 	// | A global config that's attached to the dat.gui control interface.
 	// +-------------------------------
@@ -58,7 +60,7 @@
 	    triangulate           : true,
 	    autoUpdateOnChange    : true,
 	    backgroundColor       : '#ffffff',
-	    //loadImage             : function() { $('input#file').data('type','image-upload').trigger('click'); },
+	    rebuild               : function() { rebuild(); },
 	    loadImage             : function() { var elem = document.getElementById('file'); elem.setAttribute('data-type','image-upload'); triggerClickEvent(elem); },
 	    clear                 : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
 	    randomize             : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
@@ -66,12 +68,11 @@
 	    fullCoverExtended     : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild() },
 	    exportSVG             : function() { exportSVG(); },
 	    exportPointset        : function() { exportPointset(); },
-	    //importPointset        : function() { $('input#file').data('type','pointset-upload').trigger('click'); }
 	    importPointset        : function() { var elem = document.getElementById('file'); elem.setAttribute('data-type','pointset-upload'); triggerClickEvent(elem); } 
 	};
+
 	
-	//var $canvas             = $( 'canvas#my-canvas' );
-	var canvas              = document.getElementById('my-canvas'); //$canvas[0];
+	var canvas              = document.getElementById('my-canvas'); 
 	var ctx                 = canvas.getContext('2d');
 	var draw                = new drawutils(ctx);
 	var activePointIndex    = 1;
@@ -81,12 +82,6 @@
 	var trianglesPointCount = -1;    // Keep track of the number of points when the triangles were generated.
 	var voronoiDiagram      = [];
 	
-	/* // NOT IN USE
-	var getFloat = function(selector) {
-	    return parseFloat( $(selector).val() );;
-	};
-	*/
-
 	var canvasSize = { width : DEFAULT_CANVAS_WIDTH, height : DEFAULT_CANVAS_HEIGHT };
 
 	
@@ -111,7 +106,7 @@
 
 	// +---------------------------------------------------------------------------------
 	// | A negative-numbers friendly max function (determines the absolute max and
-	// | preserves the signum.
+	// | preserves the signum).
 	// +-------------------------------
 	var absMax = function(value,max) {
 	    if( Math.abs(value) < max ) return Math.sign(value)*max;
@@ -124,7 +119,7 @@
 	// | Returns -1 if no point is near the passed position.
 	// +-------------------------------
 	var locatePointNear = function( x, y ) {
-	    var tolerance = 3;
+	    var tolerance = 5;
 	    for( var i in pointList ) {
 		var p = pointList[i];
 		let dist = Math.sqrt( Math.pow(x-p.x,2) + Math.pow(y-p.y,2) );
@@ -391,7 +386,6 @@
 	var handleImage = function(e) {
 	    var validImageTypes = "image/gif,image/jpeg,image/jpg,image/gif,image/png";
 	    if( validImageTypes.indexOf(e.target.files[0].type) == -1 ) {
-	    //if( validImageTypes.indexOf(document.getElementById('file').files[0].type) == -1 ) {
 		if( !window.confirm('This seems not to be an image ('+e.target.files[0].type+'). Continue?') )
 		    return;
 	    }	    
@@ -452,7 +446,6 @@
 	// |  - JSON for the point set)
 	// +-------------------------------
 	var handleFile = function(e) {
-	    //var type = $( 'input#file' ).data('type');
 	    var type = document.getElementById('file').getAttribute('data-type');
 	    if( type == 'image-upload' ) {
 		handleImage(e);
@@ -460,12 +453,12 @@
 		handlePointset(e);
 	    } else {
 		console.warn('Unrecognized upload type: ' + type );
-	    }
-	    
+	    }   
 	}
-	//$( 'input#file' ).change( handleFile );
 	document.getElementById( 'file' ).addEventListener('change', handleFile );
 
+
+	
 	// +---------------------------------------------------------------------------------
 	// | The rebuild function just evaluates the input and
 	// |  - triangulate the point set?
@@ -473,10 +466,14 @@
 	// +-------------------------------
 	var rebuild = function() {
 	    // Only re-triangulate if the point list changed.
-	    if( config.triangulate || config.makeVoronoiDiagram )
+	    var draw = true;
+	    if( (config.triangulate || config.makeVoronoiDiagram) ) // && trianglesPointCount != pointList.length )
 		triangulate();
-	    if( config.makeVoronoiDiagram ) makeVoronoiDiagram();
-	    redraw();
+	    if( config.makeVoronoiDiagram )
+		draw = makeVoronoiDiagram();
+
+	    if( draw )
+		redraw();
 	};
 
 	
@@ -512,6 +509,7 @@
 	// +-------------------------------
 	var makeVoronoiDiagram = function() {
 	    var voronoiBuilder = new delaunay2voronoi(pointList,triangles);
+	    /*
 	    try {
 		voronoiDiagram = voronoiBuilder.build();
 	    } catch( e ) {
@@ -527,8 +525,29 @@
 		}
 		throw e;
 	    }
+	    */
+	    voronoiDiagram = voronoiBuilder.build();
 	    redraw();
+	    if( voronoiBuilder.failedTriangleSets.length != 0 ) {
+		console.log( 'The error report contains '+voronoiBuilder.failedTriangleSets.length+' unconnected set(s) of triangles:' );
+		// Draw illegal triangle sets?
+		for( var s = 0; s < voronoiBuilder.failedTriangleSets.length; s++ ) {
+		    console.log( 'Set '+s+': ' + JSON.stringify(voronoiBuilder.failedTriangleSets[s]) );
+		    var n = voronoiBuilder.failedTriangleSets[s].length;
+		    for( var i = 0; i < n; i++ ) {
+			console.log('highlight triangle ' + i );
+			var tri = voronoiBuilder.failedTriangleSets[s][i];
+			drawTriangle( tri, 'rgb(255,'+Math.floor(255*(i/n))+',0)' );
+			draw.circle( tri.center, tri.radius, 'rgb(255,'+Math.floor(255*(i/n))+',0)' );
+		    }
+		}
+		// throw e;
+		return false;
+	    } else {
+		return true;
+	    }
 	}
+
 	
 	// +---------------------------------------------------------------------------------
 	// | Add n random points.
@@ -560,8 +579,7 @@
 		pointList.push( new Vertex(0,0) );
 		pointList.push( new Vertex(canvasSize.width,0) );
 		pointList.push( new Vertex(canvasSize.width,canvasSize.height) );
-		pointList.push( new Vertex(0,canvasSize.height) );
-		
+		pointList.push( new Vertex(0,canvasSize.height) );	
 	    }
 	    
 	    // Generate random points.
@@ -593,12 +611,10 @@
 	var resizeCanvas = function() {
 	    var _setSize = function(w,h) {
 		ctx.canvas.width  = w;
-		ctx.canvas.height = h;
-		
-		canvas.width  = w;
-		canvas.height  = h;
-		
-		canvasSize.width = w;
+		ctx.canvas.height = h;		
+		canvas.width      = w;
+		canvas.height     = h;		
+		canvasSize.width  = w;
 		canvasSize.height = h;
 	    };
 	    var width  = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
@@ -607,7 +623,6 @@
 	    else                  _setSize( DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT );
 	    redraw();
 	};
-	//$( window ).resize( resizeCanvas );
 	window.addEventListener( 'resize', resizeCanvas );
 	resizeCanvas();
 
@@ -676,7 +691,6 @@
 	    buffer.push( '</svg>' );
 	    
 	    var svgCode = buffer.join("\n");
-	    //$('#svg-preview').empty().html( svgCode );
 	    document.getElementById('svg-preview').innerHTML = svgCode;
 	    var blob = new Blob([svgCode], {
 		type: 'application/svg+xml;charset=utf-8'
@@ -703,6 +717,8 @@
         { 
 	    var gui = new dat.gui.GUI();
 	    gui.remember(config);
+
+	    gui.add(config, 'rebuild').name('Rebuild all').title("Rebuild all.");
 
 	    var f0 = gui.addFolder('Points');
 	    f0.add(config, 'pointCount').min(3).max(5200).onChange( function() { config.pointCount = Math.round(config.pointCount); updatePointCount(); } ).title("The total number of points.");
@@ -748,47 +764,11 @@
 	    else    		            redraw();
 	}
 
-	//var canvasDragged = false;
-	var dragPointIndex = -1;
-	/*
-	//$canvas.mousedown(function(e) {
-	canvas.addEventListener('mousedown', function(e) {
-	    if( e.which != 1 )
-		return; // Only react on left mouse
-	    canvasDragged = false;
-	    var posX = $(this).offset().left,
-		posY = $(this).offset().top;
-	    var x = e.pageX - posX, y = e.pageY - posY;
-	    dragPointIndex = locatePointNear(x,y);
-	    //console.log('selected point: ' + dragPointIndex );
-	} );
-	// $canvas.mousemove(function(e) {
-	canvas.addEventListener('mousemove', function(e) {
-	    canvasDragged = true;
-	    if( dragPointIndex != -1 ) {
-		var posX = $(this).offset().left,
-		    posY = $(this).offset().top;
-		var x = e.pageX - posX, y = e.pageY - posY;
-		pointList[dragPointIndex].x = x;
-		pointList[dragPointIndex].y = y;
-		redraw();
-		//drawPoint( pointList[dragPointIndex], 'grey' );
-	    }
-	} );
-	//$canvas.mouseup(function(e) {
-	canvas.addEventListener('mouseup', function(e) {
-	    if( e.which != 1 )
-		return; // Only react on eft mouse
-	    if( !canvasDragged ) {
-		var posX = $(this).offset().left,
-		    posY = $(this).offset().top;
-		handleTap( e.pageX - posX, e.pageY - posY );
-	    }
-	    canvasDragged = false;
-	    dragPointIndex = -1;
-	} );
-	*/
 
+	// +---------------------------------------------------------------------------------
+	// | Install a mouse handler on the canvas.
+	// +-------------------------------
+	var dragPointIndex = -1;
 	new MouseHandler(canvas)
 	    .mousedown( function(e) {
 		if( e.which != 1 )
@@ -798,8 +778,8 @@
 	    .drag( function(e) {
 		if( dragPointIndex == -1 )
 		    return;
-		pointList[dragPointIndex].x = e.params.pos.x; // x;
-		pointList[dragPointIndex].y = e.params.pos.y; // y;
+		pointList[dragPointIndex].x = e.params.pos.x;
+		pointList[dragPointIndex].y = e.params.pos.y;
 		redraw();
 		
 	    } )
