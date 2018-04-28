@@ -3,6 +3,7 @@
 Written in Javascript (with HTML5 Canvas), inspired by the delaunay triangulation algorithm found at
 http://www.travellermap.com/tmp/delaunay.htm
 
+
 Feature list
  * Random point set.
  * Triangulate point set.
@@ -14,16 +15,30 @@ Feature list
  * Version 1.0.3: Voronoi cells from quadratic bezier curves.
  * Version 1.0.4: Voronoi cell from cubic bezier curves.
 
+
 ## Changelog
- * v1.0.6 SVG export now also supports cubic Bézier Voronoi cells.
- * v1.0.5 SVG export now also supports quadratic Bézier Voronoi cells.
- * v1.0.4 Added quadratic voronoi cells.
- * v1.0.3 Added the Polygon class.
- * v1.0.2 Minor code changes.
- * v1.0.1 Added the option to draw circumcircles. 
+ * v1.0.7
+	* Added a better mouse handler.
+	* Added documentation for the Triangle class.
+	* Removed all usage of jQuery (library still in the package).
+ * v1.0.6
+	* SVG export now also supports cubic Bézier Voronoi cells.
+ * v1.0.5
+	* SVG export now also supports quadratic Bézier Voronoi cells.
+ * v1.0.4
+	* Added quadratic voronoi cells.
+ * v1.0.3
+	* Added the Polygon class.
+ * v1.0.2
+	* Minor code changes.
+ * v1.0.1
+	* Added the option to draw circumcircles.
+
 
 ## Todos:
- * Remove jQuery (it's not really required here).
+ * Remove jQuery? (it's not really required here).
+ * There are voronoi errors (cannot build) when points a too close.
+  * Add a good tap handler.	   
 
 
 ## Screenshots
