@@ -64,8 +64,12 @@ See the Voronoi cells from (a) quadratic and (b) cubic bezier curves:
 ![Quadratic Bezier Voronoi Cells](screenshots/voronoi-bezier-cell-a-quadratic.png "Quadratic Bezier Voronoi Cells")
 ![Cubic Bezier Voronoi Cells with threshold 1.0](screenshots/voronoi-bezier-cell-a-cubic.png "Cubic Bezier Voronoi Cells with threshold 1.0")
 
-More cells:
+More cells
 ![Cubic and quadratic bezier Voronoi cells with threshold 1.0](screenshots/voronoi-bezier-cell-b-both.png "Cubic and quadratic bezier Voronoi cells with threshold 1.0")
+
+
+A lot more cells (2000+)
+![2000 voronoi cells](screenshots/screenshot-voronoi-2000-vertices.png "2000 Voronoi cell plot")
 
 
 
