@@ -516,7 +516,7 @@
 
 	    // Optimize triangles?
 	    if( config.optimizeGaps > 0 ) {
-		for( i in triangles ) {
+		for( var i in triangles ) {
 		    var tri = triangles[i];
 		    var circumCircle = tri.getCircumcircle(); // { center:Vector, radius:Number }
 		    var scaleFactor = (circumCircle.radius+0.1) / circumCircle.radius;
