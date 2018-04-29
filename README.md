@@ -17,6 +17,8 @@ Feature list
 
 
 ## Changelog
+ * v1.0.8
+	* Added web colors for triangles.
  * v1.0.7
 	* Added a better mouse handler.
 	* Added documentation for the Triangle class.

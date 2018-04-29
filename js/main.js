@@ -11,7 +11,8 @@
  * @modified 2018-04-16 Added cubic bezier Voronoi cells.
  * @modified 2018-04-22 Added SVG export for cubic and quadratic voronoi cells.
  * @modified 2018-04-28 Added a better mouse handler.
- * @version  1.0.7
+ * @modified 2018-04-29 Added web colors.
+ * @version  1.0.8
  **/
 
 
@@ -46,6 +47,7 @@
 	// +-------------------------------
 	var config = {
 	    fillTriangles         : true,
+	    trianglesInGreyscale  : false,
 	    makeVoronoiDiagram    : false,
 	    fillAlphaOnly         : false,
 	    drawPoints            : true,
@@ -147,8 +149,18 @@
 	// +---------------------------------------------------------------------------------
 	// | Generates a random color object.
 	// +-------------------------------
+	// Not in use
+	/*
 	var randomColor = function() {
 	    return Color.makeRGB( randomInt(255), randomInt(255), randomInt(255) );
+	};
+	*/
+
+	// +---------------------------------------------------------------------------------
+	// | Generates a random web color object.
+	// +-------------------------------
+	var randomWebColor = function() {
+	    return WebColors[ Math.floor(Math.random()*WebColors.length) ];
 	};
 
 	// +---------------------------------------------------------------------------------
@@ -157,6 +169,20 @@
 	var randomGreyscale = function() {
 	    var v = 32 + randomInt(255-32);
 	    return Color.makeRGB( v, v, v );
+	};
+
+
+	// +---------------------------------------------------------------------------------
+	// | Re-assign triangles colors.
+	// +-------------------------------
+	var reassignTriangleColors = function() {
+	    for( var t in triangles ) {
+		if( config.trianglesInGreyscale )
+		    triangles[t].color = randomGreyscale().cssRGB();
+		else
+		    triangles[t].color = randomWebColor().cssRGB();
+	    }
+	    redraw();
 	};
 
 	
@@ -253,7 +279,10 @@
 		var t = triangles[i];
 		if( !t.color ) {
 		    if( !image ) {
-			t.color = randomGreyscale().cssRGB();
+			if( config.trianglesInGreyscale )
+			    t.color = randomGreyscale().cssRGB();
+			else
+			    t.color = randomWebColor().cssRGB();
 		    } else {
 			// Pick color from inside triangle
 			t.color = getAverageColorInTriangle( imageBuffer, t );
@@ -509,23 +538,6 @@
 	// +-------------------------------
 	var makeVoronoiDiagram = function() {
 	    var voronoiBuilder = new delaunay2voronoi(pointList,triangles);
-	    /*
-	    try {
-		voronoiDiagram = voronoiBuilder.build();
-	    } catch( e ) {
-		// Draw illegal triangle set?
-		if( voronoiBuilder.failedTriangleSet ) {
-		    console.log( 'The error report contains an unconnected set of triangles ('+voronoiBuilder.failedTriangleSet.length+'):' );
-		    var n = voronoiBuilder.failedTriangleSet.length;
-		    for( var i = 0; i < n; i++ ) {
-			var tri = voronoiBuilder.failedTriangleSet[i];
-			drawTriangle( tri, 'rgb(255,'+Math.floor(255*(i/n))+',0)' );
-			draw.circle( tri.center, tri.radius, 'rgb(255,'+Math.floor(255*(i/n))+',0)' );
-		    }
-		}
-		throw e;
-	    }
-	    */
 	    voronoiDiagram = voronoiBuilder.build();
 	    redraw();
 	    if( voronoiBuilder.failedTriangleSets.length != 0 ) {
@@ -730,8 +742,9 @@
 	    
 	    var f1 = gui.addFolder('Delaunay');
 	    f1.add(config, 'triangulate').onChange( rebuild ).title("Triangulate the point set?");
-	    f1.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled.");
+	    f1.add(config, 'fillTriangles').onChange( redraw ).title("If selected the triangles will be filled."); 
 	    f1.add(config, 'fillAlphaOnly').onChange( redraw ).title("Only the alpha channel from the image will be applied.");
+	    f1.add(config, 'trianglesInGreyscale').onChange( reassignTriangleColors ).title("If selected the triangles will be filled in greyscale only.");
 	    f1.add(config, 'drawEdges').onChange( redraw ).title("If checked the triangle edges will be drawn.");
 	    f1.add(config, 'drawCircumCircles').onChange( redraw ).title("If checked the triangles circumcircles will be drawn.");
 	    f1.add(config, 'optimizeGaps').onChange( rebuild ).title("If checked the triangles are scaled by 0.15 pixels to optimize gaps.");
