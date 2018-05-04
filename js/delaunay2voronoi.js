@@ -34,7 +34,7 @@
 		}
 		var path = subsetToPath(adjacentSubset);
 		if( path ) // There may be errors
-		    voronoiDiagram.push( new VoronoiCell(path) );
+		    voronoiDiagram.push( new VoronoiCell(path,point) ); 
 	    }
 	    return voronoiDiagram;
 	};

@@ -12,7 +12,8 @@
  * @modified 2018-04-22 Added SVG export for cubic and quadratic voronoi cells.
  * @modified 2018-04-28 Added a better mouse handler.
  * @modified 2018-04-29 Added web colors.
- * @version  1.0.8
+ * @modified 2018-05-04 Drawing voronoi cells by their paths now, not the triangles' circumcenters.
+ * @version  1.0.9
  **/
 
 
@@ -81,14 +82,13 @@
 	var image               = null; // An image.
 	var imageBuffer         = null; // A canvas to read the pixel data from.
 	var triangles           = [];
-	var trianglesPointCount = -1;    // Keep track of the number of points when the triangles were generated.
-	var voronoiDiagram      = [];
-	
-	var canvasSize = { width : DEFAULT_CANVAS_WIDTH, height : DEFAULT_CANVAS_HEIGHT };
+	var trianglesPointCount = -1;   // Keep track of the number of points when the triangles were generated.
+	var voronoiDiagram      = [];   // An array of VoronoiCells.
+	var canvasSize          = { width : DEFAULT_CANVAS_WIDTH, height : DEFAULT_CANVAS_HEIGHT };
 
 	
-	// A list of point-velocity-pairs.
-	var pointList  = [];
+	// A list of points.
+	var pointList            = [];
 
 	// +---------------------------------------------------------------------------------
 	// | Adds a random point to the point list. Needed for initialization.
@@ -319,12 +319,18 @@
 	    for( var v in voronoiDiagram ) {
 		var cell = voronoiDiagram[v];
 		ctx.beginPath();
+		/*
 		var centroid = cell.triangles[ 0 ].getCircumcircle().center;
 		ctx.moveTo( centroid.x, centroid.y );
 		for( var t = 1; t < cell.triangles.length; t++ ) {
 		    var centroid = cell.triangles[ t ].getCircumcircle().center;
 		    ctx.lineTo( centroid.x, centroid.y );
 		}
+		*/
+		var path = cell.toPathArray();
+		ctx.moveTo( path[0].x, path[0].y );
+		for( var t = 1; t < path.length; t++ )
+		    ctx.lineTo( path[t].x, path[t].y );
 		// Close cell?
 		// Only cells inside the triangulation should be closed. Border
 		// cell are incomplete.

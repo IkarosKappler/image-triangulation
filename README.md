@@ -17,6 +17,10 @@ Feature list
 
 
 ## Changelog
+ * v1.0.9
+	* (Experimental) Extended open voronoi cells into 'infinity'. The old implementation
+	  stopped at the outmost triangles' circumcenters.
+	  Unfortunately this is not really working at the moment. I will fix that.
  * v1.0.8
 	* Added web colors for triangles.
  * v1.0.7

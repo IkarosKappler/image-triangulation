@@ -61,11 +61,11 @@
     // |
     // | @return Vertex This vector for chaining.
     // +-------------------------------------------------------
-    Vertex.prototype.scale = function( factor, center ) {
+    Vertex.prototype.scale = function( factor, center ) { //console.log('scale='+factor+', center=' + JSON.stringify(center) );
 	if( !center || typeof center === "undefined" )
 	    center = new Vertex(0,0);
 	this.x = center.x + (this.x-center.x)*factor;
-	this.y = center.y + (this.y-center.y)*factor;
+	this.y = center.y + (this.y-center.y)*factor; //console.log( 'after scale: ' + this );
 	return this;
     };
 
