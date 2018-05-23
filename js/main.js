@@ -799,8 +799,8 @@
 		    return;
 		pointList[dragPointIndex].x = e.params.pos.x;
 		pointList[dragPointIndex].y = e.params.pos.y;
-		redraw();
-		
+		if( config.autoUpdateOnChange ) rebuild();
+		else                            redraw();		
 	    } )
 	    .mouseup( function(e) {
 		if( e.which != 1 )
