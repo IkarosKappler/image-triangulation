@@ -80,6 +80,20 @@
     };
 
 
+    
+    // +------------------------------------------------------------
+    // | Get that vertex of (a,b,c) that is not vert1 nor vert2 of 
+    // | passed two.
+    // |
+    // | @return Vertex
+    // +--------------------------------------------------------
+    Triangle.prototype.getThirdVertex = function( vert1, vert2 ) {
+	if( this.a.equals(vert1) && this.b.equals(vert2) || this.a.equals(vert2) && this.b.equals(vert1) ) return this.c;
+	if( this.b.equals(vert1) && this.c.equals(vert2) || this.b.equals(vert2) && this.c.equals(vert1) ) return this.a;
+	//if( this.c.equals(vert1) && this.a.equals(vert2) || this.c.equals(vert2) && this.a.equals(vert1) )
+	return this.b;
+    };
+
 
     // +------------------------------------------------------------
     // | Re-compute the circumcircle of this triangle (if the vertices
@@ -164,6 +178,14 @@
     };
 
 
+    // +------------------------------------------------------------
+    // | Get the determinant of this triangle.
+    // |
+    // | @return float
+    // +--------------------------------------------------------
+    Triangle.prototype.determinant = function() {
+	return this.b.x*this.b.y* 0.5 * ( - this.b.x*this.a.y - this.a.x*this.b.y - this.b.x*this.c.y + this.c.x*this.a.y + this.a.x*this.c.y );
+    };
     
     // +------------------------------------------------------------
     // | Checks if the passed vertex (p) is inside this triangle.

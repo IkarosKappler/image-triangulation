@@ -69,25 +69,9 @@
 	
 	var arr = [];
 
-	// Urgh, this is not working right now.
-	if( false && this.isOpen() ) {
-	    console.log( "Adding opening point ..." );
-	    // Open voronoi cell are infite. Find the infinte edge on the
-	    //  OPENING side.
-	    var tri     = this.triangles[0];
-	    var neigh   = this.triangles[1];
-	    var center  = tri.getCircumcircle().center;
-	    // Find non-adjacent edge (=outer edge)
-	    var edgePoint = _findOuterEdgePoint( tri, neigh, this.sharedVertex );
-	    //console.log( 'edgePoint=' + edgePoint );
-	    // Case A: Circumcenter is inside triangle.
-	    var halfEdgePoint = new Vertex( this.sharedVertex.x + (edgePoint.x-this.sharedVertex.x)/2,
-					    this.sharedVertex.y + (edgePoint.y-this.sharedVertex.y)/2 );
-	    if( tri.containsPoint(center) || neigh.containsPoint(center) ) halfEdgePoint.scale( 1000, center );
-	    else     		            halfEdgePoint.scale( -1000, center );
-	    console.log( 'open edge point: ' + JSON.stringify(halfEdgePoint) );
-	    arr.push( halfEdgePoint );
-	}
+	// Working for path begin
+	if( false && this.isOpen() ) 
+	    arr.push( _calcOpenEdgePoint( this.triangles[0], this.triangles[1], this.sharedVertex ) );
 	
 	for( var t = 0; t < this.triangles.length; t++ ) {
 	    var cc = this.triangles[t].getCircumcircle();
@@ -95,26 +79,58 @@
 	}
 
 	// Urgh, this is not working right now.
-	if( false && this.isOpen() ) {
-	    console.log( "Adding closing point ..." );
-	    // Open voronoi cell are infite. Find the infinte edge on the
-	    //  CLOSING side.
-	    var tri = this.triangles[ this.triangles.length-1 ];
-	    var center  = tri.getCircumcircle().center;
-	    // Find non-adjacent edge (=outer edge)
-	    var edgePoint = _findOuterEdgePoint( tri, this.triangles[this.triangles.length-2], this.sharedVertex );
-	    // Case A: Circumcenter is inside triangle.
-	    var halfEdgePoint = new Vertex( this.sharedVertex.x + (edgePoint.x-this.sharedVertex.x)/2,
-					    this.sharedVertex.y + (edgePoint.y-this.sharedVertex.y)/2 );
-	    if( tri.containsPoint(center) ) halfEdgePoint.scale( 1000, center );
-	    else     		            halfEdgePoint.scale( -1000, center );
-	    
-	    arr.push( halfEdgePoint );
-	}
+	if( false && this.isOpen() ) 
+	    arr.push( _calcOpenEdgePoint( this.triangles[ this.triangles.length-1 ], this.triangles[ this.triangles.length-2 ], this.sharedVertex ) );
+	
 	
 	return arr;
     }
 
+
+    // +---------------------------------------------------------------------------------
+    // | Calculate the 'infinite' open edge point based on the open path triangle
+    // | 'tri' and its neighbour 'neigh'.
+    // |
+    // | This function is used to determine outer hull points.
+    // |
+    // | @return Vertex
+    // +-------------------------------
+    var _calcOpenEdgePoint = function( tri, neigh, sharedVertex ) {
+	console.log( "Adding opening point ..." );
+	// Open voronoi cells are infite. Find the infinite edge on the
+	//  OPENING side.
+	//var tri     = this.triangles[0];
+	//var neigh   = this.triangles[1];
+	var center  = tri.getCircumcircle().center;
+	// Find non-adjacent edge (=outer edge)
+	var edgePoint = _findOuterEdgePoint( tri, neigh, sharedVertex );
+	/*
+	var halfEdgePoint = new Vertex( sharedVertex.x + (edgePoint.x-sharedVertex.x)/2,
+					sharedVertex.y + (edgePoint.y-sharedVertex.y)/2 );
+	//console.log( 'edgePoint=' + edgePoint );
+	
+	var thirdPoint = tri.getThirdVertex( sharedVertex, edgePoint );
+	console.log( 'thirdVertex=' + thirdPoint );
+	// Flip third point around outer edge
+	var openEdgePoint = new Vertex( halfEdgePoint.x - (thirdPoint.x-halfEdgePoint.x)*10000,
+					halfEdgePoint.y - (thirdPoint.y-halfEdgePoint.y)*10000 );
+	*/
+
+	var perpendicular = _perpendicularLinePoint( sharedVertex, edgePoint, center );
+	var openEdgePoint = null;
+	//console.log( "triangles determinant is: " + tri.determinant() );
+	if( new Triangle(sharedVertex,center,edgePoint).determinant() <= 0 ) // false && tri.containsPoint(center) )
+	    openEdgePoint = new Vertex( perpendicular.x + (center.x-perpendicular.x)*1000,
+					perpendicular.y + (center.y-perpendicular.y)*1000 );
+	else
+	    openEdgePoint = new Vertex( perpendicular.x + (perpendicular.x-center.x)*1000,
+					perpendicular.y + (perpendicular.y-center.y)*1000 );
+	
+	console.log( 'open edge point: ' + JSON.stringify(openEdgePoint) );
+	//arr.push( openEdgePoint );
+	return openEdgePoint;
+    };
+    
     // +---------------------------------------------------------------------------------
     // | Find the outer (not adjacent) vertex in triangle 'tri' which has triangle 'neighbour'.
     // |
@@ -136,5 +152,36 @@
 	if( neighbour.a.equals(tri.a) || neighbour.b.equals(tri.a) || neighbour.c.equals(tri.a) ) return tri.b;
 	else return tri.a;
     };
+
+    
+    var _perpendicularLinePoint = function( lineA, lineB, point ) {
+	// Found at
+	//    https://stackoverflow.com/questions/1811549/perpendicular-on-a-line-from-a-given-point?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+	// first convert line to normalized unit vector
+	// double dx = x2 - x1;
+	// double dy = y2 - y1;
+	// double mag = sqrt(dx*dx + dy*dy);
+	// dx /= mag;
+	// dy /= mag;
+	// 
+	// translate the point and get the dot product
+	// double lambda = (dx * (x3 - x1)) + (dy * (y3 - y1));
+	// x4 = (dx * lambda) + x1;
+	// y4 = (dy * lambda) + y1;
+
+	// first convert line to normalized unit vector
+	var dx = lineB.x - lineA.x;
+	var dy = lineB.y - lineA.y;
+	var mag = Math.sqrt(dx*dx + dy*dy);
+	dx /= mag;
+	dy /= mag;
+
+	// translate the point and get the dot product
+	var lambda = (dx * (point.x - lineA.x)) + (dy * (point.y - lineA.y));
+	x4 = (dx * lambda) + lineA.x;
+	y4 = (dy * lambda) + lineA.y;
+	return new Vertex(x4,y4);
+    }
+    
     
 })(window ? window : module.export);

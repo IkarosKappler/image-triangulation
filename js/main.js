@@ -19,6 +19,9 @@
 
 (function($) {
     "use strict";
+
+    // Fetch the GET params
+    let GUP = gup();
     
     const DEFAULT_CANVAS_WIDTH = 1024;
     const DEFAULT_CANVAS_HEIGHT = 768;
@@ -73,6 +76,16 @@
 	    exportPointset        : function() { exportPointset(); },
 	    importPointset        : function() { var elem = document.getElementById('file'); elem.setAttribute('data-type','pointset-upload'); triggerClickEvent(elem); } 
 	};
+	// Merge GET params into config
+	for( var k in config ) {
+	    if( !GUP.hasOwnProperty(k) )
+		continue;
+	    var type = typeof config[k];
+	    if( type == 'boolean' ) config[k] = !!JSON.parse(GUP[k]);
+	    else if( type == 'number' ) config[k] = JSON.parse(GUP[k])*1;
+	    else if( type == 'function' ) ;
+	    else config[k] = GUP[k];
+	}
 
 	
 	var canvas              = document.getElementById('my-canvas'); 
