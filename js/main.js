@@ -68,6 +68,7 @@
 	    backgroundColor       : '#ffffff',
 	    rebuild               : function() { rebuild(); },
 	    loadImage             : function() { var elem = document.getElementById('file'); elem.setAttribute('data-type','image-upload'); triggerClickEvent(elem); },
+	    fitImage              : true,
 	    clear                 : function() { pointList = []; triangles = []; voronoiDiagram = []; redraw(); },
 	    randomize             : function() { randomPoints(true,false,false); trianglesPointCount = -1; rebuild(); },
 	    fullCover             : function() { randomPoints(true,true,false); trianglesPointCount = -1; rebuild(); },
@@ -284,7 +285,11 @@
 
 	    // Draw the background image?
 	    if( image ) {
-		ctx.drawImage(image,0,0);
+		if( config.fitImage ) {
+		    ctx.drawImage(image,0,0,image.width,image.height,0,0,canvasSize.width,canvasSize.height);
+		} else {
+		    ctx.drawImage(image,0,0);
+		}
 	    } 
 
 	    // Draw triangles
@@ -403,7 +408,6 @@
 	// | Draw the voronoi cells as quadratic bezier curves.
 	// +-------------------------------
 	var drawCubicBezierVoronoi = function() {
-	    console.log( 'draw quadratic curves' );
 	    for( var c in voronoiDiagram ) {
 		var cell = voronoiDiagram[c];
 		if( cell.isOpen() || cell.triangles.length < 3 )
@@ -440,11 +444,13 @@
 	    var reader = new FileReader();
 	    reader.onload = function(event){
 		image = new Image();
-		image.onload = function(){
-		    canvas.width = image.width;
-		    canvas.height = image.height;
-		    canvasSize.width = image.width;
-		    canvasSize.height = image.height;
+		image.onload = function() {
+		    if( !config.fullSize ) {
+			//canvas.width = image.width;
+			//canvas.height = image.height;
+			//canvasSize.width = image.width;
+			//canvasSize.height = image.height;
+		    }
 		    // Create image buffer
 		    imageBuffer        = document.createElement('canvas');
 		    imageBuffer.width  = image.width;
@@ -778,6 +784,7 @@
 	    f3.add(config, 'fullSize').onChange( resizeCanvas ).title("Toggles the fullpage mode.");
 	    f3.addColor(config, 'backgroundColor').onChange( redraw ).title("Choose a background color.");
 	    f3.add(config, 'loadImage').name('Load Image').title("Load a background image to pick triangle colors from.");
+	    f3.add(config, 'fitImage').name('Fit Image').title("Fit image to available window size (contain).");
 	    f3.add(config, 'autoUpdateOnChange').onChange( rebuild ).title("Update when points are added.");
 	    
 	    var f4 = gui.addFolder('Import & Export');
